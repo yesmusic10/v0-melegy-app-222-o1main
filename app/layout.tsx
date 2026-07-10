@@ -97,6 +97,25 @@ export default function RootLayout({
 
         {/* Service Worker Registration */}
         <Script src="/register-sw.js" strategy="lazyOnload" />
+        
+        {/* Dynamic theme color based on dark mode */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              function updateThemeColor() {
+                const isDark = document.documentElement.classList.contains('dark');
+                const themeColor = document.querySelector('meta[name="theme-color"]');
+                if (themeColor) {
+                  themeColor.setAttribute('content', isDark ? '#1a1a1a' : '#f8f9fa');
+                }
+              }
+              
+              updateThemeColor();
+              const observer = new MutationObserver(updateThemeColor);
+              observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+            `,
+          }}
+        />
       </head>
       <body className={`${cairo.className} antialiased`} suppressHydrationWarning>
         <AuthProvider>

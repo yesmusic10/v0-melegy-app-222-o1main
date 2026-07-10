@@ -664,30 +664,29 @@ export default function ChatStarterPage() {
         content: msg.content,
       }))
 
-      const response = await fetch("/api/perplexity-chat", {
+      const response = await fetch("/api/chat-egyptian", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: currentInput,
-          conversationHistory,
+          messages: conversationHistory,
         }),
       })
 
-      const data = await response.json()
-
-      if (!response.ok || data.error) {
-        throw new Error(data.error || "API error")
+      if (!response.ok) {
+        throw new Error("API error")
       }
+
+      const responseText = await response.text()
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: data.response,
+        content: responseText,
       }
 
       setMessages((prev) => [...prev, assistantMessage])
 
-      const newWordCount = monthlyWords + wordCount + countWords(data.response || "")
+      const newWordCount = monthlyWords + wordCount + countWords(responseText || "")
       setMonthlyWords(newWordCount)
       fetch("/api/usage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ monthly_words: newWordCount }) })
     } catch (error) {

@@ -677,32 +677,29 @@ export default function ChatPage() {
         timeZoneName: "short",
       })
 
-      const response = await fetch("/api/perplexity-chat", {
+      const response = await fetch("/api/chat-egyptian", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: currentInput,
-          conversationHistory,
-          clientDateTime,
+          messages: conversationHistory,
         }),
       })
 
       console.log("[v0] API Response status:", response.status)
-      
-      const data = await response.json()
-      
-      console.log("[v0] API Response data:", data)
 
-      if (!response.ok || data.error) {
-        console.error("[v0] API Error:", data.error || "API error")
-        throw new Error(data.error || "API error")
+      if (!response.ok) {
+        throw new Error("API error")
       }
+
+      // Egyptian API returns streaming text, read as plain text
+      const responseText = await response.text()
+      
+      console.log("[v0] API Response text:", responseText)
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: data.response,
-        imageUrl: data.imageUrl || undefined,
+        content: responseText,
       }
 
       console.log("[v0] Adding assistant message:", assistantMessage)

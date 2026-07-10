@@ -58,7 +58,7 @@ export function Header({ showChatHistory = false, onChatHistoryClick, showHomeBu
           variant="outline"
           size="sm"
           onClick={toggleLanguage}
-          className="bg-card backdrop-blur-md border-2 border-cyan-500/70 text-cyan-400 hover:text-cyan-300 hover:border-cyan-400 flex items-center gap-1.5 font-bold min-w-[52px]"
+          className="bg-card dark:bg-gray-800 backdrop-blur-md border-2 border-cyan-500/70 dark:border-cyan-600/70 text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 hover:border-cyan-600 dark:hover:border-cyan-500 flex items-center gap-1.5 font-bold min-w-[52px]"
           aria-label={language === "ar" ? "Switch to English" : "Switch to Arabic"}
         >
           <Languages className="h-4 w-4 shrink-0" />
