@@ -186,11 +186,11 @@ export default function AuthPage() {
           </button>
 
           {/* Info text */}
-          <p className={`text-xs text-center leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+          <p className={`text-xs text-center leading-relaxed ${isDark ? 'text-white' : 'text-gray-600'}`}>
             بتسجيل دخولك، أنت توافق على{' '}
-            <span className={`cursor-pointer hover:underline ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>شروط الاستخدام</span>{' '}
+            <span className={`cursor-pointer hover:underline ${isDark ? 'text-white' : 'text-blue-600'}`}>شروط الاستخدام</span>{' '}
             و{' '}
-            <span className={`cursor-pointer hover:underline ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>سياسة الخصوصية</span>
+            <span className={`cursor-pointer hover:underline ${isDark ? 'text-white' : 'text-blue-600'}`}>سياسة الخصوصية</span>
           </p>
 
           {/* Features hint */}

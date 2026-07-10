@@ -76,11 +76,11 @@ export function Hero() {
       </p>
 
       {/* Version */}
-      <p className="text-base text-blue-500 dark:text-blue-400 mb-8">{translations.heroVersion}</p>
+      <p className="text-base text-blue-500 dark:text-white mb-8">{translations.heroVersion}</p>
 
       {/* Description */}
       <p
-        className="text-lg text-gray-600 dark:text-gray-300 mb-12 max-w-3xl mx-auto text-center"
+        className="text-lg text-gray-600 dark:text-white mb-12 max-w-3xl mx-auto text-center"
         dir={language === "ar" ? "rtl" : "ltr"}
       >
         {translations.heroDescription}
@@ -155,7 +155,7 @@ export function Hero() {
                   <div className="flex items-start gap-2 flex-1">
                     <div>
                       <p className="text-gray-800 dark:text-white text-sm font-medium">{title}</p>
-                      <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">{desc}</p>
+                      <p className="text-gray-500 dark:text-white text-xs mt-0.5">{desc}</p>
                     </div>
                     {icon}
                   </div>
@@ -181,7 +181,7 @@ export function Hero() {
           {translations.heroCta}
         </p>
         <p
-          className="text-base text-gray-500 dark:text-gray-300 text-center"
+          className="text-base text-gray-500 dark:text-white text-center"
           dir={language === "ar" ? "rtl" : "ltr"}
         >
           {translations.heroCtaSub}
