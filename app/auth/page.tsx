@@ -8,6 +8,17 @@ export default function AuthPage() {
   const router = useRouter()
   const { user, loading } = useAuth()
   const [isRedirecting, setIsRedirecting] = useState(false)
+  const [isDark, setIsDark] = useState(false)
+
+  // Detect dark mode
+  useEffect(() => {
+    setIsDark(document.documentElement.classList.contains('dark'))
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'))
+    })
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    return () => observer.disconnect()
+  }, [])
 
   // If already logged in, redirect to chat
   useEffect(() => {
@@ -34,10 +45,10 @@ export default function AuthPage() {
 
   if (loading || isRedirecting) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f0f4ff]">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          <span className="text-sm text-gray-500 font-medium">جاري التحميل...</span>
+          <div className={`w-10 h-10 border-3 border-t-transparent rounded-full animate-spin ${isDark ? 'border-blue-400' : 'border-blue-600'}`} />
+          <span className={`text-sm font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>جاري التحميل...</span>
         </div>
       </div>
     )
@@ -45,10 +56,7 @@ export default function AuthPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center"
-      style={{
-        background: 'linear-gradient(135deg, #e8f0ff 0%, #f0f4ff 40%, #e4f0fb 100%)',
-      }}
+      className="min-h-screen flex items-center justify-center bg-background"
       dir="rtl"
     >
       {/* Background decorative blobs */}
@@ -56,23 +64,39 @@ export default function AuthPage() {
         className="pointer-events-none fixed inset-0 overflow-hidden"
         aria-hidden="true"
       >
-        <div
-          className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-30"
-          style={{ background: 'radial-gradient(circle, #93c5fd 0%, transparent 70%)' }}
-        />
-        <div
-          className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, #6ee7b7 0%, transparent 70%)' }}
-        />
+        {isDark ? (
+          <>
+            <div
+              className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-20"
+              style={{ background: 'radial-gradient(circle, #3b82f6 0%, transparent 70%)' }}
+            />
+            <div
+              className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full opacity-15"
+              style={{ background: 'radial-gradient(circle, #10b981 0%, transparent 70%)' }}
+            />
+          </>
+        ) : (
+          <>
+            <div
+              className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-30"
+              style={{ background: 'radial-gradient(circle, #93c5fd 0%, transparent 70%)' }}
+            />
+            <div
+              className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full opacity-20"
+              style={{ background: 'radial-gradient(circle, #6ee7b7 0%, transparent 70%)' }}
+            />
+          </>
+        )}
       </div>
 
       {/* Card */}
       <div
         className="relative w-full max-w-md mx-4 rounded-2xl overflow-hidden"
         style={{
-          background: '#ffffff',
-          boxShadow:
-            '0 20px 60px rgba(59,130,246,0.12), 0 8px 24px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
+          background: isDark ? '#1f2937' : '#ffffff',
+          boxShadow: isDark
+            ? '0 20px 60px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1)'
+            : '0 20px 60px rgba(59,130,246,0.12), 0 8px 24px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
         }}
       >
         {/* Top gradient bar */}
@@ -88,12 +112,14 @@ export default function AuthPage() {
           <div
             className="w-20 h-20 rounded-2xl flex items-center justify-center"
             style={{
-              background: '#f8faff',
-              boxShadow: '0 4px 16px rgba(59,130,246,0.15), inset 0 1px 0 rgba(255,255,255,0.9)',
+              background: isDark ? '#111827' : '#f8faff',
+              boxShadow: isDark
+                ? '0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)'
+                : '0 4px 16px rgba(59,130,246,0.15), inset 0 1px 0 rgba(255,255,255,0.9)',
             }}
           >
             <img
-              src="/images/melegy-icon.png"
+              src="/images/melegy-logo.png"
               alt="Melegy"
               className="w-14 h-14 object-contain"
             />
@@ -101,33 +127,37 @@ export default function AuthPage() {
 
           {/* Title */}
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-1">مرحباً بك في ملجي</h1>
-            <p className="text-sm text-gray-500">مساعدك الذكي المتطور</p>
+            <h1 className={`text-2xl font-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>مرحباً بك في ملجي</h1>
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>مساعدك الذكي المتطور</p>
           </div>
 
           {/* Divider */}
-          <div className="w-full border-t border-gray-100" />
+          <div className={`w-full border-t ${isDark ? 'border-gray-700' : 'border-gray-100'}`} />
 
           {/* Google Sign-In Button */}
           <button
             onClick={handleGoogleLogin}
             disabled={isRedirecting}
-            className="w-full flex items-center justify-center gap-3 rounded-xl px-5 py-3.5 font-semibold text-gray-700 transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
+            className={`w-full flex items-center justify-center gap-3 rounded-xl px-5 py-3.5 font-semibold transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed ${isDark ? 'text-gray-100' : 'text-gray-700'}`}
             style={{
-              background: '#ffffff',
-              border: '1.5px solid #e2e8f0',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
+              background: isDark ? '#2d3748' : '#ffffff',
+              border: `1.5px solid ${isDark ? '#4b5563' : '#e2e8f0'}`,
+              boxShadow: isDark
+                ? '0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)'
+                : '0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow =
-                '0 4px 16px rgba(59,130,246,0.12), inset 0 1px 0 rgba(255,255,255,0.9)'
-              e.currentTarget.style.borderColor = '#93c5fd'
+              e.currentTarget.style.boxShadow = isDark
+                ? '0 4px 16px rgba(59,130,246,0.2), inset 0 1px 0 rgba(255,255,255,0.05)'
+                : '0 4px 16px rgba(59,130,246,0.12), inset 0 1px 0 rgba(255,255,255,0.9)'
+              e.currentTarget.style.borderColor = isDark ? '#60a5fa' : '#93c5fd'
               e.currentTarget.style.transform = 'translateY(-1px)'
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow =
-                '0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)'
-              e.currentTarget.style.borderColor = '#e2e8f0'
+              e.currentTarget.style.boxShadow = isDark
+                ? '0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)'
+                : '0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)'
+              e.currentTarget.style.borderColor = isDark ? '#4b5563' : '#e2e8f0'
               e.currentTarget.style.transform = 'translateY(0)'
             }}
           >
@@ -150,23 +180,26 @@ export default function AuthPage() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            <span className="text-gray-800">
+            <span className={isDark ? 'text-gray-100' : 'text-gray-800'}>
               {isRedirecting ? 'جاري التوجيه...' : 'المتابعة باستخدام Google'}
             </span>
           </button>
 
           {/* Info text */}
-          <p className="text-xs text-gray-400 text-center leading-relaxed">
+          <p className={`text-xs text-center leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-400'}`}>
             بتسجيل دخولك، أنت توافق على{' '}
-            <span className="text-blue-500 cursor-pointer hover:underline">شروط الاستخدام</span>{' '}
+            <span className={`cursor-pointer hover:underline ${isDark ? 'text-blue-400' : 'text-blue-500'}`}>شروط الاستخدام</span>{' '}
             و{' '}
-            <span className="text-blue-500 cursor-pointer hover:underline">سياسة الخصوصية</span>
+            <span className={`cursor-pointer hover:underline ${isDark ? 'text-blue-400' : 'text-blue-500'}`}>سياسة الخصوصية</span>
           </p>
 
           {/* Features hint */}
           <div
             className="w-full rounded-xl px-4 py-3 flex flex-col gap-2"
-            style={{ background: '#f8faff', border: '1px solid #e8f0ff' }}
+            style={{
+              background: isDark ? '#111827' : '#f8faff',
+              border: `1px solid ${isDark ? '#2d3748' : '#e8f0ff'}`
+            }}
           >
             {[
               'محادثاتك محفوظة تلقائياً على كل أجهزتك',
@@ -174,8 +207,8 @@ export default function AuthPage() {
               'حساب Google الخاص بك آمن تماماً',
             ].map((text) => (
               <div key={text} className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
-                <span className="text-xs text-gray-600">{text}</span>
+                <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isDark ? 'bg-blue-500' : 'bg-blue-400'}`} />
+                <span className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>{text}</span>
               </div>
             ))}
           </div>
