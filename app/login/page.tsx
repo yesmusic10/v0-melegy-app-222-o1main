@@ -100,6 +100,26 @@ export default function LoginPage() {
     }
   }
 
+  const handleGoogleOAuthLogin = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/auth/google-oauth')
+      const data = await response.json()
+      
+      if (data.authUrl) {
+        window.location.href = data.authUrl
+      } else {
+        toast.error('فشل في بدء تسجيل الدخول عبر Google')
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'فشل تسجيل الدخول عبر Google'
+      toast.error(errorMessage)
+      console.error('[v0] Google OAuth error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
 
 
   return (
@@ -169,12 +189,13 @@ export default function LoginPage() {
 
           <div id="google-signin-button-login" className="w-full flex justify-center" />
 
-          {/* Fallback button if Google SDK doesn't load */}
+          {/* OAuth fallback button */}
           <Button
             type="button"
             variant="outline"
-            className="w-full hidden"
+            className="w-full"
             disabled={loading}
+            onClick={handleGoogleOAuthLogin}
           >
             <svg className="w-5 h-5 ml-2" viewBox="0 0 24 24">
               <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
