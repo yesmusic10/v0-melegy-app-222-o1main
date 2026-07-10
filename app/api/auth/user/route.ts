@@ -3,9 +3,11 @@ import { getSessionByToken, getUserById } from '@/lib/auth-db'
 
 export async function GET(request: NextRequest) {
   try {
-    // Get token from Authorization header
+    // Accept token from Authorization header OR httpOnly cookie
     const authHeader = request.headers.get('authorization')
-    const token = authHeader?.replace('Bearer ', '')
+    const token =
+      authHeader?.replace('Bearer ', '') ||
+      request.cookies.get('auth_token')?.value
 
     if (!token) {
       return NextResponse.json(
