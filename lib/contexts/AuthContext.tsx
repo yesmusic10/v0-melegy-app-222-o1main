@@ -32,17 +32,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Load session from localStorage on mount
+  // Load session from cookie or localStorage on mount
   useEffect(() => {
-    const storedToken = localStorage.getItem('auth_token')
-    if (storedToken) {
-      setToken(storedToken)
-      // Verify token is still valid
-      verifyToken(storedToken)
-    } else {
-      setLoading(false)
+    const loadSession = () => {
+      // Try to get token from cookie first (set by OAuth callback)
+      const cookieToken = getCookie('auth_token_client')
+      // Fallback to localStorage for backward compatibility
+      const storedToken = cookieToken || localStorage.getItem('auth_token')
+      
+      if (storedToken) {
+        setToken(storedToken)
+        // Store in localStorage if it came from cookie
+        if (cookieToken) {
+          localStorage.setItem('auth_token', storedToken)
+        }
+        // Verify token is still valid
+        verifyToken(storedToken)
+      } else {
+        setLoading(false)
+      }
     }
+    
+    loadSession()
   }, [])
+
+  // Helper function to get cookie value
+  const getCookie = (name: string): string | null => {
+    if (typeof document === 'undefined') return null
+    const value = `; ${document.cookie}`
+    const parts = value.split(`; ${name}=`)
+    if (parts.length === 2) return parts.pop()?.split(';').shift() || null
+    return null
+  }
 
   const verifyToken = async (authToken: string) => {
     try {

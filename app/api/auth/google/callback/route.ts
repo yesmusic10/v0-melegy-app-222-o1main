@@ -218,10 +218,18 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Set auth token in cookie and redirect to home
-    const responseToSend = NextResponse.redirect(new URL('/', request.url))
+    // Set auth token in cookie and redirect to chat page
+    const responseToSend = NextResponse.redirect(new URL('/chat', request.url))
     responseToSend.cookies.set('auth_token', data.token, {
       httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+    })
+
+    // Also set in a non-httpOnly cookie for client-side access
+    responseToSend.cookies.set('auth_token_client', data.token, {
+      httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60, // 30 days
