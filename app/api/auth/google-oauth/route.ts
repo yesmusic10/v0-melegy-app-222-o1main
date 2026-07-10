@@ -14,7 +14,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/google/callback`
+    // Get the base URL from the request to ensure it matches what's registered in Google Console
+    const { protocol, host } = request.nextUrl
+    const baseUrl = `${protocol}//${host}`
+    const redirectUri = `${baseUrl}/api/auth/google/callback`
     
     const params = new URLSearchParams({
       client_id: clientId,

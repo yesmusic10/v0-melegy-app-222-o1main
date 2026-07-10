@@ -23,15 +23,13 @@ interface GoogleUserInfo {
 /**
  * Exchange OAuth code for user info and handle signin
  */
-async function exchangeCodeForToken(code: string): Promise<GoogleUserInfo> {
+async function exchangeCodeForToken(code: string, redirectUri: string): Promise<GoogleUserInfo> {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET
   
   if (!clientId || !clientSecret) {
     throw new Error('Google OAuth credentials not configured')
   }
-
-  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/google/callback`
 
   // Exchange code for tokens
   const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -69,6 +67,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     console.log('[v0] Google callback - body keys:', Object.keys(body))
 
+    // Get the redirect URI from request
+    const { protocol, host } = request.nextUrl
+    const baseUrl = `${protocol}//${host}`
+    const redirectUri = `${baseUrl}/api/auth/google/callback`
+
     // Support both JWT method and OAuth code method
     let googleId: string
     let email: string
@@ -87,7 +90,7 @@ export async function POST(request: NextRequest) {
     else if (body.code) {
       console.log('[v0] Using OAuth code method')
       try {
-        const userInfo = await exchangeCodeForToken(body.code)
+        const userInfo = await exchangeCodeForToken(body.code, redirectUri)
         googleId = userInfo.sub
         email = userInfo.email
         firstName = userInfo.given_name
@@ -178,8 +181,18 @@ export async function GET(request: NextRequest) {
   try {
     const code = request.nextUrl.searchParams.get('code')
     const state = request.nextUrl.searchParams.get('state')
+    const error = request.nextUrl.searchParams.get('error')
+    const errorDescription = request.nextUrl.searchParams.get('error_description')
 
     console.log('[v0] Google OAuth callback GET - received code:', !!code)
+
+    // Handle OAuth errors from Google
+    if (error) {
+      console.error('[v0] Google OAuth error:', error, errorDescription)
+      return NextResponse.redirect(
+        new URL(`/login?error=${encodeURIComponent(error)}&description=${encodeURIComponent(errorDescription || '')}`, request.url)
+      )
+    }
 
     if (!code) {
       return NextResponse.json(
