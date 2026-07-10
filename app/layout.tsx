@@ -98,10 +98,22 @@ export default function RootLayout({
         {/* Service Worker Registration */}
         <Script src="/register-sw.js" strategy="lazyOnload" />
         
-        {/* Dynamic theme color based on dark mode */}
+        {/* Theme initialization and dynamic theme color */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
+              (function() {
+                // Initialize theme to light by default
+                const saved = localStorage.getItem('theme');
+                const isDarkFromStorage = saved === 'dark';
+                
+                if (isDarkFromStorage) {
+                  document.documentElement.classList.add('dark');
+                } else {
+                  document.documentElement.classList.remove('dark');
+                }
+              })();
+              
               function updateThemeColor() {
                 const isDark = document.documentElement.classList.contains('dark');
                 const themeColor = document.querySelector('meta[name="theme-color"]');
