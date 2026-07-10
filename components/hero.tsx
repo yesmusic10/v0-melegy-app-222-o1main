@@ -44,11 +44,12 @@ export function Hero() {
       <div className="flex justify-center mb-12">
         <div className="relative">
           <div className="absolute inset-0 bg-blue-600/30 rounded-full blur-3xl" />
-          <div className="relative w-48 h-48 rounded-full bg-gradient-to-br from-blue-900/80 to-blue-950/80 backdrop-blur-xl border border-blue-500/30 flex items-center justify-center overflow-hidden">
+          <div className="relative w-48 h-48 rounded-3xl bg-white flex items-center justify-center overflow-hidden"
+               style={{boxShadow: '0 8px 32px rgba(59,130,246,0.18), 0 2px 8px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.9)'}}>
             <img 
-              src="/images/logo.jpg" 
+              src="/images/melegy-icon.png" 
               alt="Melegy Logo" 
-              className="w-full h-full object-cover"
+              className="w-4/5 h-4/5 object-contain"
             />
           </div>
         </div>

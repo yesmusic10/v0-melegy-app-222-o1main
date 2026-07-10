@@ -21,13 +21,13 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   icons: {
     icon: [
-      { url: "/images/logo.jpg", sizes: "192x192", type: "image/jpeg" },
-      { url: "/images/logo.jpg", sizes: "512x512", type: "image/jpeg" },
+      { url: "/images/melegy-icon.png", sizes: "192x192", type: "image/png" },
+      { url: "/images/melegy-icon.png", sizes: "512x512", type: "image/png" },
     ],
     apple: [
-      { url: "/images/logo.jpg", sizes: "180x180", type: "image/jpeg" },
+      { url: "/images/melegy-icon.png", sizes: "180x180", type: "image/png" },
     ],
-    shortcut: "/images/logo.jpg",
+    shortcut: "/images/melegy-icon.png",
   },
   appleWebApp: {
     capable: true,
@@ -62,11 +62,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ar" className="dark" suppressHydrationWarning>
+    <html lang="ar" className="bg-background" suppressHydrationWarning>
       <head>
         {/* PWA Core */}
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#000000" />
+        <meta name="theme-color" content="#f8f9fa" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover" />
 
         {/* Android PWA */}
@@ -77,29 +77,23 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Melegy" />
-        <link rel="apple-touch-icon" href="/images/logo.jpg" />
-        <link rel="apple-touch-icon" sizes="120x120" href="/images/logo.jpg" />
-        <link rel="apple-touch-icon" sizes="152x152" href="/images/logo.jpg" />
-        <link rel="apple-touch-icon" sizes="167x167" href="/images/logo.jpg" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/images/logo.jpg" />
-        {/* iOS Splash Screens — media queries required for iOS to recognize them */}
+        <link rel="apple-touch-icon" href="/images/melegy-icon.png" />
+        <link rel="apple-touch-icon" sizes="120x120" href="/images/melegy-icon.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/images/melegy-icon.png" />
+        <link rel="apple-touch-icon" sizes="167x167" href="/images/melegy-icon.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/images/melegy-icon.png" />
+        {/* iOS Splash Screens */}
         <meta name="apple-touch-fullscreen" content="yes" />
-        {/* iPhone SE / 6/7/8 */}
-        <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" href="/images/logo.jpg" />
-        {/* iPhone X/XS/11 Pro */}
-        <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" href="/images/logo.jpg" />
-        {/* iPhone XR/11 */}
-        <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" href="/images/logo.jpg" />
-        {/* iPhone 12/13/14 Pro */}
-        <link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" href="/images/logo.jpg" />
-        {/* iPhone 14 Plus/15 Plus */}
-        <link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" href="/images/logo.jpg" />
-        {/* Fallback for any other iOS device */}
-        <link rel="apple-touch-startup-image" href="/images/logo.jpg" />
+        <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" href="/images/melegy-icon.png" />
+        <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" href="/images/melegy-icon.png" />
+        <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" href="/images/melegy-icon.png" />
+        <link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" href="/images/melegy-icon.png" />
+        <link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" href="/images/melegy-icon.png" />
+        <link rel="apple-touch-startup-image" href="/images/melegy-icon.png" />
         {/* Favicon */}
-        <link rel="icon" type="image/jpeg" sizes="192x192" href="/images/logo.jpg" />
-        <link rel="icon" type="image/jpeg" sizes="512x512" href="/images/logo.jpg" />
-        <link rel="shortcut icon" href="/images/logo.jpg" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/images/melegy-icon.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/images/melegy-icon.png" />
+        <link rel="shortcut icon" href="/images/melegy-icon.png" />
 
         {/* Service Worker Registration */}
         <Script src="/register-sw.js" strategy="lazyOnload" />
