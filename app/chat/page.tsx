@@ -71,10 +71,10 @@ export default function ChatPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
 
-  // Redirect to login if not authenticated
+  // Redirect to auth if not authenticated
   useEffect(() => {
     if (!loading && !user) {
-      router.push("/login")
+      router.push("/auth")
     }
   }, [user, loading, router])
 
@@ -269,7 +269,7 @@ export default function ChatPage() {
       "انشئ شيت",
       "اعمل excel",
       "اعمل اكسيل",
-      "اعمل جدول",
+      "اعمل ج��ول",
       "ولد excel",
       "ولد اكسيل",
       "create excel",

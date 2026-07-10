@@ -14,11 +14,11 @@ type HeaderProps = {
 
 export function Header({ showChatHistory = false, onChatHistoryClick, showHomeButton = false }: HeaderProps) {
   const { translations, language, setLanguage } = useApp()
-  // Default to "dark" — synced from localStorage after mount so no flash
-  const [theme, setTheme] = useState<"light" | "dark">("dark")
+  // Default to "light" — synced from localStorage after mount
+  const [theme, setTheme] = useState<"light" | "dark">("light")
 
   useEffect(() => {
-    const saved = (localStorage.getItem("theme") as "light" | "dark") || "dark"
+    const saved = (localStorage.getItem("theme") as "light" | "dark") || "light"
     setTheme(saved)
     document.documentElement.classList.toggle("dark", saved === "dark")
   }, [])
@@ -70,7 +70,7 @@ export function Header({ showChatHistory = false, onChatHistoryClick, showHomeBu
             <Button
               variant="outline"
               size="sm"
-              className="bg-background/20 backdrop-blur-md border-border/50 flex items-center gap-2 text-white hover:text-white"
+              className="bg-card backdrop-blur-md border-border/50 flex items-center gap-2 text-foreground hover:text-foreground"
             >
               <Home className="h-4 w-4" />
               <span className="hidden sm:inline">{translations.home}</span>
@@ -83,7 +83,7 @@ export function Header({ showChatHistory = false, onChatHistoryClick, showHomeBu
             variant="outline"
             size="sm"
             onClick={onChatHistoryClick}
-            className="bg-background/20 backdrop-blur-md border-border/50 flex items-center gap-2 text-white hover:text-white"
+            className="bg-card backdrop-blur-md border-border/50 flex items-center gap-2 text-foreground hover:text-foreground"
           >
             <MessageSquare className="h-4 w-4" />
             <span className="hidden sm:inline">{translations.history}</span>

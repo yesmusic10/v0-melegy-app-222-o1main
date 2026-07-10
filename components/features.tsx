@@ -26,15 +26,16 @@ export function Features() {
           return (
             <div
               key={index}
-              className="group relative bg-gradient-to-br from-slate-900/50 to-slate-950/50 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-8 hover:border-blue-500/50 transition-all duration-300 hover:scale-105"
+              className="group relative bg-white border border-gray-200 rounded-2xl p-8 hover:border-blue-400 transition-all duration-300 hover:scale-105"
+              style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}
             >
               <div className="text-5xl mb-4">
-                {feature.icon === "🖼️" ? <ImageIcon className="h-12 w-12 text-blue-400" /> : feature.icon}
+                {feature.icon === "🖼️" ? <ImageIcon className="h-12 w-12 text-blue-500" /> : feature.icon}
               </div>
-              <h3 className="text-xl font-bold text-white mb-3" dir={language === "ar" ? "rtl" : "ltr"}>
+              <h3 className="text-xl font-bold text-gray-900 mb-3" dir={language === "ar" ? "rtl" : "ltr"}>
                 {featureText.title}
               </h3>
-              <p className="text-white/60 leading-relaxed" dir={language === "ar" ? "rtl" : "ltr"}>
+              <p className="text-gray-600 leading-relaxed" dir={language === "ar" ? "rtl" : "ltr"}>
                 {featureText.description}
               </p>
             </div>

@@ -101,11 +101,6 @@
       radial-gradient(ellipse at 80% 90%, rgba(100,160,255,0.04) 0%, transparent 60%);
   }
 
-  /* All text black by default in light mode */
-  h1, h2, h3, h4, h5, h6, p, span, a, label {
-    color: hsl(0 0% 5%);
-  }
-
   input::placeholder,
   textarea::placeholder {
     color: hsl(0 0% 50%);

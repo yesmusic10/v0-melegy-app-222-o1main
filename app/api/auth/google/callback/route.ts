@@ -27,12 +27,12 @@ export async function GET(request: NextRequest) {
 
   if (oauthError) {
     return NextResponse.redirect(
-      new URL(`/login?error=${encodeURIComponent(oauthError)}`, request.url)
+      new URL(`/auth?error=${encodeURIComponent(oauthError)}`, request.url)
     )
   }
 
   if (!code) {
-    return NextResponse.redirect(new URL('/login?error=no_code', request.url))
+    return NextResponse.redirect(new URL('/auth?error=no_code', request.url))
   }
 
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
 
   if (!clientId || !clientSecret) {
     return NextResponse.redirect(
-      new URL('/login?error=server_misconfigured', request.url)
+      new URL('/auth?error=server_misconfigured', request.url)
     )
   }
 
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
       const errText = await tokenRes.text()
       console.error('[v0] Token exchange failed:', errText)
       return NextResponse.redirect(
-        new URL('/login?error=token_exchange_failed', request.url)
+        new URL('/auth?error=token_exchange_failed', request.url)
       )
     }
 
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
 
     if (!profileRes.ok) {
       return NextResponse.redirect(
-        new URL('/login?error=profile_fetch_failed', request.url)
+        new URL('/auth?error=profile_fetch_failed', request.url)
       )
     }
 
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
 
     if (!googleId || !email) {
       return NextResponse.redirect(
-        new URL('/login?error=missing_profile_data', request.url)
+        new URL('/auth?error=missing_profile_data', request.url)
       )
     }
 
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
 
     if (!user) {
       return NextResponse.redirect(
-        new URL('/login?error=user_creation_failed', request.url)
+        new URL('/auth?error=user_creation_failed', request.url)
       )
     }
 
@@ -124,8 +124,37 @@ export async function GET(request: NextRequest) {
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
     await createSession(user.id, sessionToken, expiresAt)
 
-    // ── 5. Set cookies and redirect to /chat ───────────────────────────────────
-    const res = NextResponse.redirect(new URL('/chat', request.url))
+    // ── 5. Determine chat destination based on active subscription ─────────────
+    let chatDestination = '/chat' // default (starter / free)
+
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      if (supabaseUrl && supabaseKey) {
+        const subRes = await fetch(
+          `${supabaseUrl}/rest/v1/subscriptions?user_id=eq.${user.id}&status=eq.active&order=end_date.desc&limit=1`,
+          {
+            headers: {
+              apikey: supabaseKey,
+              Authorization: `Bearer ${supabaseKey}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        )
+        if (subRes.ok) {
+          const subs = await subRes.json()
+          const activePlan = subs?.[0]?.plan_type as string | undefined
+          if (activePlan === 'vip') chatDestination = '/chat-vip'
+          else if (activePlan === 'pro') chatDestination = '/chat-pro'
+          else if (activePlan === 'starter') chatDestination = '/chat-starter'
+        }
+      }
+    } catch {
+      // Subscription lookup failed — fall back to /chat
+    }
+
+    // ── 6. Set cookies and redirect ────────────────────────────────────────────
+    const res = NextResponse.redirect(new URL(chatDestination, request.url))
 
     // httpOnly — for server-side verification
     res.cookies.set('auth_token', sessionToken, {
@@ -145,7 +174,7 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     console.error('[v0] Google callback unexpected error:', err)
     return NextResponse.redirect(
-      new URL('/login?error=server_error', request.url)
+      new URL('/auth?error=server_error', request.url)
     )
   }
 }
