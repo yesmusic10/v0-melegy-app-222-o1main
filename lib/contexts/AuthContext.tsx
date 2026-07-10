@@ -34,20 +34,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Load session from cookie or localStorage on mount
   useEffect(() => {
-    const loadSession = () => {
+    const loadSession = async () => {
       // Try to get token from cookie first (set by OAuth callback)
       const cookieToken = getCookie('auth_token_client')
       // Fallback to localStorage for backward compatibility
       const storedToken = cookieToken || localStorage.getItem('auth_token')
       
       if (storedToken) {
+        // Set token first so it's available immediately
         setToken(storedToken)
         // Store in localStorage if it came from cookie
         if (cookieToken) {
           localStorage.setItem('auth_token', storedToken)
         }
         // Verify token is still valid
-        verifyToken(storedToken)
+        await verifyToken(storedToken)
       } else {
         setLoading(false)
       }
@@ -68,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const verifyToken = async (authToken: string) => {
     try {
       const response = await fetch('/api/auth/user', {
+        credentials: 'include',
         headers: {
           'Authorization': `Bearer ${authToken}`,
         },
