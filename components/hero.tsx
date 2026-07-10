@@ -53,14 +53,11 @@ export function Hero() {
                   : '0 8px 32px rgba(59,130,246,0.25), 0 2px 8px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.1)',
             }}
           >
-            <picture>
-              <source media="(prefers-color-scheme: dark)" srcSet="/images/melegy-icon-dark.png" />
-              <img
-                src="/images/melegy-icon.png"
-                alt="Melegy Logo"
-                className="w-4/5 h-4/5 object-contain"
-              />
-            </picture>
+            <img
+              src="/images/melegy-logo.png"
+              alt="Melegy Logo"
+              className="w-4/5 h-4/5 object-contain"
+            />
           </div>
         </div>
       </div>
