@@ -63,10 +63,28 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" className="bg-background" suppressHydrationWarning>
-      <head>
-        {/* PWA Core */}
-        <link rel="manifest" href="/manifest.json" />
+    <head>
+        {/* Theme initialization FIRST - before any CSS loads to prevent flicker */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                // Force light theme by default - remove dark class immediately
+                document.documentElement.classList.remove('dark');
+                // Only enable dark if explicitly saved in localStorage
+                const saved = localStorage.getItem('theme');
+                if (saved === 'dark') {
+                  document.documentElement.classList.add('dark');
+                }
+              })();
+            `,
+          }}
+        />
+        
+        <meta charSet="UTF-8" />
+        <meta name="description" content={metadata.description} />
         <meta name="theme-color" content="#f8f9fa" />
+        <meta name="color-scheme" content="light dark" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover" />
 
         {/* Android PWA */}
@@ -98,20 +116,10 @@ export default function RootLayout({
         {/* Service Worker Registration */}
         <Script src="/register-sw.js" strategy="lazyOnload" />
         
-        {/* Theme initialization - Light theme is default */}
+        {/* Dynamic theme-color update when dark mode toggles */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              (function() {
-                // Force light theme by default - remove dark class on page load
-                document.documentElement.classList.remove('dark');
-                // Only enable dark if explicitly saved in localStorage
-                const saved = localStorage.getItem('theme');
-                if (saved === 'dark') {
-                  document.documentElement.classList.add('dark');
-                }
-              })();
-              
               function updateThemeColor() {
                 const isDark = document.documentElement.classList.contains('dark');
                 const themeColor = document.querySelector('meta[name="theme-color"]');
