@@ -6,19 +6,26 @@
 import { Pool } from 'pg'
 import { attachDatabasePool } from '@vercel/functions'
 
-// Parse DATABASE_URL for connection
-const databaseUrl = process.env.DATABASE_URL
-if (!databaseUrl) {
-  throw new Error('DATABASE_URL environment variable is not set')
+// Lazy-loaded pool to avoid errors during build time
+let pool: Pool | null = null
+
+function getPool(): Pool {
+  if (!pool) {
+    const databaseUrl = process.env.DATABASE_URL
+    if (!databaseUrl) {
+      throw new Error('DATABASE_URL environment variable is not set')
+    }
+
+    pool = new Pool({
+      connectionString: databaseUrl,
+      ssl: { rejectUnauthorized: false },
+      max: 20,
+    })
+
+    attachDatabasePool(pool)
+  }
+  return pool
 }
-
-const pool = new Pool({
-  connectionString: databaseUrl,
-  ssl: { rejectUnauthorized: false },
-  max: 20,
-})
-
-attachDatabasePool(pool)
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -45,7 +52,7 @@ export interface AuthSession {
 
 export async function getUserByEmail(email: string): Promise<AuthUser | null> {
   try {
-    const result = await pool.query(
+    const result = await getPool().query(
       'SELECT * FROM auth_users WHERE email = $1 LIMIT 1',
       [email]
     )
@@ -58,7 +65,7 @@ export async function getUserByEmail(email: string): Promise<AuthUser | null> {
 
 export async function getUserByGoogleId(googleId: string): Promise<AuthUser | null> {
   try {
-    const result = await pool.query(
+    const result = await getPool().query(
       'SELECT * FROM auth_users WHERE google_id = $1 LIMIT 1',
       [googleId]
     )
@@ -71,7 +78,7 @@ export async function getUserByGoogleId(googleId: string): Promise<AuthUser | nu
 
 export async function getUserById(id: number): Promise<AuthUser | null> {
   try {
-    const result = await pool.query(
+    const result = await getPool().query(
       'SELECT * FROM auth_users WHERE id = $1 LIMIT 1',
       [id]
     )
@@ -90,7 +97,7 @@ export async function createUser(data: {
   last_name?: string | null
 }): Promise<AuthUser> {
   try {
-    const result = await pool.query(
+    const result = await getPool().query(
       `INSERT INTO auth_users (email, password_hash, google_id, first_name, last_name, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
        RETURNING *`,
@@ -134,7 +141,7 @@ export async function updateUser(id: number, data: Partial<AuthUser>): Promise<A
 
     if (updates.length === 1) return getUserById(id) // Only updated_at, no changes
 
-    const result = await pool.query(
+    const result = await getPool().query(
       `UPDATE auth_users SET ${updates.join(', ')} WHERE id = $1 RETURNING *`,
       values
     )
@@ -149,7 +156,7 @@ export async function updateUser(id: number, data: Partial<AuthUser>): Promise<A
 
 export async function createSession(userId: number, token: string, expiresAt: Date): Promise<AuthSession> {
   try {
-    const result = await pool.query(
+    const result = await getPool().query(
       `INSERT INTO auth_sessions (user_id, token, expires_at, created_at)
        VALUES ($1, $2, $3, NOW())
        RETURNING *`,
@@ -164,7 +171,7 @@ export async function createSession(userId: number, token: string, expiresAt: Da
 
 export async function getSessionByToken(token: string): Promise<AuthSession | null> {
   try {
-    const result = await pool.query(
+    const result = await getPool().query(
       'SELECT * FROM auth_sessions WHERE token = $1 AND expires_at > NOW() LIMIT 1',
       [token]
     )
@@ -177,7 +184,7 @@ export async function getSessionByToken(token: string): Promise<AuthSession | nu
 
 export async function deleteSession(token: string): Promise<void> {
   try {
-    await pool.query(
+    await getPool().query(
       'DELETE FROM auth_sessions WHERE token = $1',
       [token]
     )
@@ -188,7 +195,7 @@ export async function deleteSession(token: string): Promise<void> {
 
 export async function deleteExpiredSessions(): Promise<void> {
   try {
-    await pool.query(
+    await getPool().query(
       'DELETE FROM auth_sessions WHERE expires_at <= NOW()'
     )
   } catch (error) {
@@ -200,7 +207,7 @@ export async function deleteExpiredSessions(): Promise<void> {
 
 export async function createConversation(userId: number, title?: string): Promise<any> {
   try {
-    const result = await pool.query(
+    const result = await getPool().query(
       `INSERT INTO conversations (user_id, title, created_at, updated_at)
        VALUES ($1, $2, NOW(), NOW())
        RETURNING *`,
@@ -215,7 +222,7 @@ export async function createConversation(userId: number, title?: string): Promis
 
 export async function getConversationsByUserId(userId: number): Promise<any[]> {
   try {
-    const result = await pool.query(
+    const result = await getPool().query(
       `SELECT * FROM conversations WHERE user_id = $1 ORDER BY created_at DESC`,
       [userId]
     )
@@ -228,7 +235,7 @@ export async function getConversationsByUserId(userId: number): Promise<any[]> {
 
 export async function deleteConversation(conversationId: number, userId: number): Promise<void> {
   try {
-    await pool.query(
+    await getPool().query(
       'DELETE FROM conversations WHERE id = $1 AND user_id = $2',
       [conversationId, userId]
     )
@@ -241,7 +248,7 @@ export async function deleteConversation(conversationId: number, userId: number)
 
 export async function addChatMessage(conversationId: number, userId: number, role: string, content: string): Promise<any> {
   try {
-    const result = await pool.query(
+    const result = await getPool().query(
       `INSERT INTO chat_messages (conversation_id, user_id, role, content, created_at)
        VALUES ($1, $2, $3, $4, NOW())
        RETURNING *`,
@@ -256,7 +263,7 @@ export async function addChatMessage(conversationId: number, userId: number, rol
 
 export async function getChatMessages(conversationId: number): Promise<any[]> {
   try {
-    const result = await pool.query(
+    const result = await getPool().query(
       `SELECT * FROM chat_messages WHERE conversation_id = $1 ORDER BY created_at ASC`,
       [conversationId]
     )
@@ -269,8 +276,8 @@ export async function getChatMessages(conversationId: number): Promise<any[]> {
 
 // ─── Utility for transaction operations ───────────────────────────────────────
 
-export async function withTransaction<T>(fn: (client: ClientBase) => Promise<T>): Promise<T> {
-  const client = await pool.connect()
+export async function withTransaction<T>(fn: (client: any) => Promise<T>): Promise<T> {
+  const client = await getPool().connect()
   try {
     await client.query('BEGIN')
     const result = await fn(client)
@@ -283,5 +290,3 @@ export async function withTransaction<T>(fn: (client: ClientBase) => Promise<T>)
     client.release()
   }
 }
-
-export { pool }
