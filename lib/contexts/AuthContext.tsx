@@ -35,34 +35,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Load session from cookie or localStorage on mount
   useEffect(() => {
     const loadSession = async () => {
-      // Try to get token from cookie first (set by OAuth callback)
-      const cookieToken = getCookie('auth_token_client')
-      // Fallback to localStorage for backward compatibility
-      const storedToken = cookieToken || localStorage.getItem('auth_token')
-      
-      if (storedToken) {
-        // Set token first so it's available immediately
-        setToken(storedToken)
-        // Store in localStorage if it came from cookie
-        if (cookieToken) {
-          localStorage.setItem('auth_token', storedToken)
+      try {
+        // Try to get token from cookie first (set by OAuth callback)
+        const cookieToken = getCookie('auth_token_client')
+        // Fallback to localStorage for backward compatibility
+        const storedToken = cookieToken || localStorage.getItem('auth_token')
+        
+        if (storedToken) {
+          console.log('[v0] Found auth token, verifying...')
+          // Set token first so it's available immediately
+          setToken(storedToken)
+          // Store in localStorage if it came from cookie
+          if (cookieToken) {
+            localStorage.setItem('auth_token', storedToken)
+          }
+          // Verify token is still valid
+          await verifyToken(storedToken)
+        } else {
+          console.log('[v0] No auth token found')
+          setLoading(false)
         }
-        // Verify token is still valid
-        await verifyToken(storedToken)
-      } else {
+      } catch (err) {
+        console.error('[v0] Error loading session:', err)
         setLoading(false)
       }
     }
     
-    loadSession()
+    // Use a small delay to ensure cookies are fully set by the browser
+    const timer = setTimeout(loadSession, 100)
+    return () => clearTimeout(timer)
   }, [])
 
   // Helper function to get cookie value
   const getCookie = (name: string): string | null => {
     if (typeof document === 'undefined') return null
-    const value = `; ${document.cookie}`
-    const parts = value.split(`; ${name}=`)
-    if (parts.length === 2) return parts.pop()?.split(';').shift() || null
+    try {
+      const value = `; ${document.cookie}`
+      const parts = value.split(`; ${name}=`)
+      if (parts.length === 2) {
+        const cookieValue = parts.pop()?.split(';').shift() || null
+        if (cookieValue) {
+          console.log(`[v0] Found cookie ${name}:`, cookieValue.substring(0, 20) + '...')
+        }
+        return cookieValue
+      }
+    } catch (err) {
+      console.error(`[v0] Error reading cookie ${name}:`, err)
+    }
     return null
   }
 
@@ -78,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         const data = await response.json()
         setUser(data.user)
+        setToken(authToken)
       } else {
         // Token is invalid, clear it
         localStorage.removeItem('auth_token')

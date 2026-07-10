@@ -23,6 +23,7 @@ export default function AuthPage() {
   // If already logged in, redirect to chat
   useEffect(() => {
     if (!loading && user) {
+      console.log('[v0] User already authenticated, redirecting to chat:', user.email)
       setIsRedirecting(true)
       router.replace('/chat')
     }

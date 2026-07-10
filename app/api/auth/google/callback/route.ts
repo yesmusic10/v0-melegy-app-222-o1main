@@ -154,6 +154,9 @@ export async function GET(request: NextRequest) {
     }
 
     // ── 6. Set cookies and redirect ────────────────────────────────────────────
+    console.log('[v0] Google OAuth successful for user:', user.email)
+    console.log('[v0] Redirecting to:', chatDestination)
+    
     const res = NextResponse.redirect(new URL(chatDestination, request.url))
 
     // httpOnly — for server-side verification
@@ -169,6 +172,8 @@ export async function GET(request: NextRequest) {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
     })
+
+    console.log('[v0] Cookies set, session token:', sessionToken.substring(0, 20) + '...')
 
     return res
   } catch (err) {
