@@ -186,11 +186,11 @@ export default function AuthPage() {
           </button>
 
           {/* Info text */}
-          <p className={`text-xs text-center leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-400'}`}>
+          <p className={`text-xs text-center leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
             بتسجيل دخولك، أنت توافق على{' '}
-            <span className={`cursor-pointer hover:underline ${isDark ? 'text-blue-400' : 'text-blue-500'}`}>شروط الاستخدام</span>{' '}
+            <span className={`cursor-pointer hover:underline ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>شروط الاستخدام</span>{' '}
             و{' '}
-            <span className={`cursor-pointer hover:underline ${isDark ? 'text-blue-400' : 'text-blue-500'}`}>سياسة الخصوصية</span>
+            <span className={`cursor-pointer hover:underline ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>سياسة الخصوصية</span>
           </p>
 
           {/* Features hint */}
@@ -207,8 +207,8 @@ export default function AuthPage() {
               'حساب Google الخاص بك آمن تماماً',
             ].map((text) => (
               <div key={text} className="flex items-center gap-2">
-                <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isDark ? 'bg-blue-500' : 'bg-blue-400'}`} />
-                <span className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>{text}</span>
+                <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isDark ? 'bg-blue-400' : 'bg-blue-500'}`} />
+                <span className={`text-xs ${isDark ? 'text-white' : 'text-gray-700'}`}>{text}</span>
               </div>
             ))}
           </div>

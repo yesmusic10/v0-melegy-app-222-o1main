@@ -63,24 +63,24 @@ export function Hero() {
       </div>
 
       {/* Heading */}
-      <h1 className="text-6xl md:text-7xl font-bold text-blue-600 mb-6">
+      <h1 className="text-6xl md:text-7xl font-bold text-blue-600 dark:text-blue-400 mb-6">
         {translations.heroTitle}
       </h1>
 
       {/* Subtitle */}
       <p
-        className="text-2xl md:text-3xl text-gray-800 mb-4 font-semibold text-center"
+        className="text-2xl md:text-3xl text-gray-800 dark:text-white mb-4 font-semibold text-center"
         dir={language === "ar" ? "rtl" : "ltr"}
       >
         {translations.heroSubtitle}
       </p>
 
       {/* Version */}
-      <p className="text-base text-blue-500 mb-8">{translations.heroVersion}</p>
+      <p className="text-base text-blue-500 dark:text-blue-400 mb-8">{translations.heroVersion}</p>
 
       {/* Description */}
       <p
-        className="text-lg text-gray-600 mb-12 max-w-3xl mx-auto text-center"
+        className="text-lg text-gray-600 dark:text-gray-300 mb-12 max-w-3xl mx-auto text-center"
         dir={language === "ar" ? "rtl" : "ltr"}
       >
         {translations.heroDescription}
@@ -129,14 +129,14 @@ export function Hero() {
           dir="rtl"
         >
           <div
-            className="bg-white rounded-2xl p-6 w-full max-w-sm mx-4"
+            className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-sm mx-4"
             style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}
           >
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-gray-900 font-bold text-lg">تثبيت على iPhone</h3>
+              <h3 className="text-gray-900 dark:text-white font-bold text-lg">تثبيت على iPhone</h3>
               <button
                 onClick={() => setShowAppleGuide(false)}
-                className="text-gray-400 hover:text-gray-700 transition-colors"
+                className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -154,8 +154,8 @@ export function Hero() {
                   </div>
                   <div className="flex items-start gap-2 flex-1">
                     <div>
-                      <p className="text-gray-800 text-sm font-medium">{title}</p>
-                      <p className="text-gray-500 text-xs mt-0.5">{desc}</p>
+                      <p className="text-gray-800 dark:text-white text-sm font-medium">{title}</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">{desc}</p>
                     </div>
                     {icon}
                   </div>
@@ -164,7 +164,7 @@ export function Hero() {
             </div>
             <button
               onClick={() => setShowAppleGuide(false)}
-              className="w-full mt-5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl py-3 text-sm font-medium transition-colors"
+              className="w-full mt-5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-white rounded-xl py-3 text-sm font-medium transition-colors"
             >
               فهمت، شكراً
             </button>
@@ -175,13 +175,13 @@ export function Hero() {
       {/* Bottom CTA */}
       <div className="mt-8 flex flex-col items-center gap-3">
         <p
-          className="text-lg text-gray-700 font-medium text-center max-w-3xl"
+          className="text-lg text-gray-700 dark:text-white font-medium text-center max-w-3xl"
           dir={language === "ar" ? "rtl" : "ltr"}
         >
           {translations.heroCta}
         </p>
         <p
-          className="text-base text-gray-500 text-center"
+          className="text-base text-gray-500 dark:text-gray-300 text-center"
           dir={language === "ar" ? "rtl" : "ltr"}
         >
           {translations.heroCtaSub}
