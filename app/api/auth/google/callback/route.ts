@@ -218,6 +218,12 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    if (!data.token) {
+      return NextResponse.redirect(
+        new URL(`/login?error=${encodeURIComponent('فشل في إنشاء الجلسة')}`, request.url)
+      )
+    }
+
     // Set auth token in cookie and redirect to chat page
     const responseToSend = NextResponse.redirect(new URL('/chat', request.url))
     responseToSend.cookies.set('auth_token', data.token, {
@@ -235,6 +241,7 @@ export async function GET(request: NextRequest) {
       maxAge: 30 * 24 * 60 * 60, // 30 days
     })
 
+    console.log('[v0] User redirected to /chat with token')
     return responseToSend
   } catch (error) {
     console.error('[v0] Google OAuth GET error:', error)

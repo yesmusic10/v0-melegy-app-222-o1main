@@ -7,21 +7,7 @@ import { authClient } from '@/lib/auth-client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
-import Script from 'next/script'
 
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        id: {
-          initialize: (config: any) => void
-          renderButton: (element: HTMLElement, config: any) => void
-          oneTap: (config: any) => void
-        }
-      }
-    }
-  }
-}
 
 export default function SignupPage() {
   const router = useRouter()
@@ -35,35 +21,7 @@ export default function SignupPage() {
   })
   const [validationError, setValidationError] = useState('')
 
-  useEffect(() => {
-    const initializeGoogle = () => {
-      if (window.google && process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) {
-        window.google.accounts.id.initialize({
-          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-          callback: handleGoogleCallback,
-        })
-        
-        const buttonEl = document.getElementById('google-signin-button')
-        if (buttonEl) {
-          window.google.accounts.id.renderButton(buttonEl, {
-            type: 'standard',
-            theme: 'outline',
-            size: 'large',
-            locale: 'ar',
-          })
-        }
-      } else {
-        console.warn('[v0] Google SDK or Client ID not available')
-      }
-    }
 
-    if (window.google) {
-      initializeGoogle()
-    } else {
-      window.addEventListener('load', initializeGoogle)
-      return () => window.removeEventListener('load', initializeGoogle)
-    }
-  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -112,72 +70,13 @@ export default function SignupPage() {
 
       console.log('[v0] Signup successful')
       toast.success('تم إنشاء الحساب بنجاح')
-      router.push('/')
+      router.push('/chat')
       router.refresh()
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'فشل إنشاء الحساب'
       console.error('[v0] Signup error:', errorMessage)
       setValidationError(errorMessage)
       toast.error(errorMessage)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleGoogleCallback = async (response: any) => {
-    try {
-      setValidationError('')
-      setIsLoading(true)
-      
-      // Decode the JWT token to get user info
-      const token = response.credential
-      const base64Url = token.split('.')[1]
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-      const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split('')
-          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
-      )
-      const decoded = JSON.parse(jsonPayload)
-
-      console.log('[v0] Google callback received:', decoded)
-
-      // Sign in with Google using authClient
-      const result = await authClient.signIn.social({
-        provider: 'google',
-        callbackURL: '/',
-      }, {
-        onSuccess: () => {
-          toast.success('تم تسجيل الدخول بنجاح عبر Gmail')
-          router.push('/')
-          router.refresh()
-        },
-        onError: (err) => {
-          throw new Error(err?.error?.message || 'فشل تسجيل الدخول عبر Gmail')
-        },
-      })
-
-      // Alternative: Direct API call for Gmail
-      await fetch('/api/auth/google/callback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          googleId: decoded.sub,
-          email: decoded.email,
-          firstName: decoded.given_name,
-          lastName: decoded.family_name,
-        }),
-      })
-
-      toast.success('تم إنشاء الحساب بنجاح عبر Gmail')
-      router.push('/')
-      router.refresh()
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'فشل إنشاء الحساب عبر Gmail'
-      setValidationError(errorMessage)
-      toast.error(errorMessage)
-      console.error('[v0] Google signup error:', err)
     } finally {
       setIsLoading(false)
     }
@@ -318,9 +217,7 @@ export default function SignupPage() {
             </div>
           </div>
 
-          <div id="google-signin-button" className="w-full flex justify-center" />
-
-          {/* OAuth fallback button */}
+          {/* Google OAuth button */}
           <Button
             type="button"
             variant="outline"
@@ -347,12 +244,7 @@ export default function SignupPage() {
           </div>
         </div>
       </div>
-      
-      <Script 
-        src="https://accounts.google.com/gsi/client" 
-        async 
-        defer
-      />
+
     </div>
   )
 }
