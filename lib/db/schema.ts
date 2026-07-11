@@ -2,21 +2,25 @@ import { pgTable, text, timestamp, boolean, jsonb, integer, uuid } from 'drizzle
 import { relations } from 'drizzle-orm'
 
 // --- Better Auth required tables from neon_auth schema ---
-// These are already created in AWS Aurora - we just map them here
+// These are already created in Neon - we just map them here
 
-export const user = pgTable('user', {
-  id: uuid('id').primaryKey(),
-  email: text('email').unique().notNull(),
-  emailVerified: boolean('emailVerified').default(false).notNull(),
-  name: text('name'),
-  image: text('image'),
-  createdAt: timestamp('createdAt', { withTimezone: true }).notNull(),
-  updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull(),
-  banned: boolean('banned').default(false),
-  banReason: text('banReason'),
-  banExpires: timestamp('banExpires', { withTimezone: true }),
-  role: text('role').default('user'),
-})
+export const user = pgTable(
+  'user',
+  {
+    id: uuid('id').primaryKey(),
+    email: text('email').unique().notNull(),
+    emailVerified: boolean('emailVerified').default(false).notNull(),
+    name: text('name'),
+    image: text('image'),
+    createdAt: timestamp('createdAt', { withTimezone: true }).notNull(),
+    updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull(),
+    banned: boolean('banned').default(false),
+    banReason: text('banReason'),
+    banExpires: timestamp('banExpires', { withTimezone: true }),
+    role: text('role').default('user'),
+  },
+  (table) => ({})
+)
 
 export const session = pgTable('session', {
   id: uuid('id').primaryKey(),
