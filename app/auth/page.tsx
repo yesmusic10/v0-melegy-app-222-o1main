@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/lib/contexts/AuthContext'
+import { useSession } from '@/lib/auth-client'
 
 export default function AuthPage() {
   const router = useRouter()
-  const { user, loading } = useAuth()
+  const { data: session, isPending } = useSession()
   const [isRedirecting, setIsRedirecting] = useState(false)
   const [isDark, setIsDark] = useState(false)
 
@@ -20,31 +20,21 @@ export default function AuthPage() {
     return () => observer.disconnect()
   }, [])
 
-  // If already logged in, redirect to chat
+  // If already logged in, redirect to home
   useEffect(() => {
-    if (!loading && user) {
-      console.log('[v0] User already authenticated, redirecting to chat:', user.email)
+    if (!isPending && session?.user) {
+      console.log('[v0] User already authenticated, redirecting to home:', session.user.email)
       setIsRedirecting(true)
-      router.replace('/chat')
+      router.replace('/')
     }
-  }, [user, loading, router])
+  }, [session?.user, isPending, router])
 
   const handleGoogleLogin = async () => {
     try {
       setIsRedirecting(true)
-      const res = await fetch('/api/auth/google-oauth')
-      
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`)
-      }
-      
-      const data = await res.json()
-      
-      if (!data.authUrl) {
-        throw new Error('No authUrl in response')
-      }
-      
-      window.location.href = data.authUrl
+      // Better Auth handles Google sign-in natively
+      // This will redirect to Google OAuth flow
+      window.location.href = '/api/auth/signin/google'
     } catch (error) {
       console.error('[v0] Google login error:', error)
       alert('فشل في بدء تسجيل الدخول. حاول مرة أخرى.')
@@ -52,7 +42,7 @@ export default function AuthPage() {
     }
   }
 
-  if (loading || isRedirecting) {
+  if (isPending || isRedirecting) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
