@@ -1,4 +1,4 @@
-import { createAndSendOTP, createUserFromPhone } from '@/lib/services/sms-service'
+import { createAndSendOTP, createUserFromPhone, getOTPForPhone } from '@/lib/services/sms-service'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
@@ -41,11 +41,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Get the OTP for development/testing
+    const otp = await getOTPForPhone(formattedPhone)
+
     return NextResponse.json(
       {
         message: 'OTP sent successfully',
         otpId,
         userId,
+        // Return OTP in development for testing
+        ...(process.env.NODE_ENV === 'development' && { otp }),
       },
       { status: 200 }
     )

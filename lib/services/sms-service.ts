@@ -13,6 +13,10 @@ export async function sendOTPToPhone(phone: string, otp: string): Promise<boolea
   try {
     // In production, integrate with Twilio or Firebase SMS
     console.log(`[SMS] Sending OTP ${otp} to ${phone}`)
+    console.log(`[SMS] ⚠️ DEVELOPMENT MODE: Show this code to user: ${otp}`)
+    
+    // Simulate SMS sending delay
+    await new Promise(resolve => setTimeout(resolve, 500))
     
     // Simulate SMS sending - in production this would call Twilio API
     // await twilioClient.messages.create({
@@ -156,6 +160,22 @@ export async function getUserByPhone(phone: string) {
     return users.length > 0 ? users[0] : null
   } catch (error) {
     console.error('[SMS] Error getting user:', error)
+    return null
+  }
+}
+
+// Get OTP for phone (for development/testing)
+export async function getOTPForPhone(phone: string): Promise<string | null> {
+  try {
+    const records = await db
+      .select()
+      .from(otpVerification)
+      .where(eq(otpVerification.phone, phone))
+      .limit(1)
+    
+    return records.length > 0 ? records[0].otp : null
+  } catch (error) {
+    console.error('[SMS] Error getting OTP:', error)
     return null
   }
 }
