@@ -97,6 +97,27 @@ export const message = pgTable('message', {
   createdAt: timestamp('createdAt').notNull().defaultNow(),
 })
 
+// --- Phone OTP Authentication
+export const userPhone = pgTable('userPhone', {
+  id: text('id').primaryKey(),
+  phone: text('phone').unique().notNull(),
+  name: text('name').notNull(),
+  birthDate: text('birthDate').notNull(), // YYYY-MM-DD format
+  subscriptionPlan: text('subscriptionPlan').notNull().default('free'),
+  isVerified: boolean('isVerified').notNull().default(false),
+  createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export const otpVerification = pgTable('otpVerification', {
+  id: text('id').primaryKey(),
+  phone: text('phone').notNull(),
+  otp: text('otp').notNull(),
+  attempts: integer('attempts').notNull().default(0),
+  expiresAt: timestamp('expiresAt', { withTimezone: true }).notNull(),
+  createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+})
+
 // --- App tables - User preferences
 export const userPreference = pgTable('userPreference', {
   id: text('id').primaryKey(),
