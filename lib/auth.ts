@@ -1,39 +1,36 @@
 import { betterAuth } from 'better-auth'
-import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { google } from 'better-auth/social-providers'
-import type { BetterAuthOptions } from 'better-auth'
-import { db, pool } from '@/lib/db'
-import * as schema from '@/lib/db/schema'
+import { pool } from '@/lib/db'
 
 const baseURL =
-  process.env.BETTER_AUTH_URL ||
+  process.env.BETTER_AUTH_URL ??
   (process.env.VERCEL_PROJECT_PRODUCTION_URL
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
     : process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
-      : process.env.V0_RUNTIME_URL || 'http://localhost:3000')
+      : process.env.V0_RUNTIME_URL)
 
 const trustedOrigins = [
-  baseURL,
   ...(process.env.V0_RUNTIME_URL ? [process.env.V0_RUNTIME_URL] : []),
   ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
   ...(process.env.VERCEL_PROJECT_PRODUCTION_URL
     ? [`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`]
     : []),
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:3002',
 ]
 
-const authConfig: BetterAuthOptions = {
-  database: drizzleAdapter(db, {
-    provider: 'pg',
-    schema,
-  }),
-  secret: process.env.BETTER_AUTH_SECRET || '',
+export const auth = betterAuth({
+  database: pool,
   baseURL,
-  trustedOrigins,
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,
   },
+  secret: process.env.BETTER_AUTH_SECRET,
+  trustedOrigins,
+  databaseSchema: 'neon_auth',
   ...(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID &&
   process.env.GOOGLE_CLIENT_SECRET
     ? {
@@ -61,6 +58,4 @@ const authConfig: BetterAuthOptions = {
             secure: true,
           },
   },
-}
-
-export const auth = betterAuth(authConfig)
+})

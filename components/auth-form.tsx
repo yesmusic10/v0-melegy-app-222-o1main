@@ -76,7 +76,9 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
         : await authClient.signIn.email({ email, password })
 
       if (error) {
-        setError(error.message ?? 'Something went wrong')
+        console.error('[v0] Auth error:', error)
+        const errorMessage = typeof error === 'string' ? error : (error as any)?.message ?? 'Something went wrong'
+        setError(errorMessage)
         setLoading(false)
         return
       }
@@ -84,7 +86,9 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
       router.push('/')
       router.refresh()
     } catch (err) {
-      setError('An unexpected error occurred')
+      console.error('[v0] Auth exception:', err)
+      const errorMsg = err instanceof Error ? err.message : 'An unexpected error occurred'
+      setError(errorMsg)
       setLoading(false)
     }
   }
