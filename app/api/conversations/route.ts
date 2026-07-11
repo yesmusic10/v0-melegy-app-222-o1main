@@ -58,12 +58,12 @@ export async function POST(req: Request) {
 
     await db.insert(conversation).values({
       id,
-      userId,
+      userid: userId,
       title: title?.trim() || 'New Conversation',
       model: selectedModel,
       description: description?.trim(),
-      createdAt: now,
-      updatedAt: now,
+      createdat: now,
+      updatedat: now,
     })
 
     return Response.json({
