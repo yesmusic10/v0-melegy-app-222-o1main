@@ -1,57 +1,60 @@
-import { pgTable, text, timestamp, boolean, jsonb, integer } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, boolean, jsonb, integer, uuid } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
-// --- Better Auth required tables -------------------------------------------
-// Column names are camelCase to match Better Auth's defaults. Do not rename.
+// --- Better Auth required tables from neon_auth schema ---
+// These are already created in AWS Aurora - we just map them here
 
 export const user = pgTable('user', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  email: text('email').notNull().unique(),
-  emailVerified: boolean('emailVerified').notNull().default(false),
+  id: uuid('id').primaryKey(),
+  email: text('email').unique().notNull(),
+  emailVerified: boolean('emailVerified').default(false).notNull(),
+  name: text('name'),
   image: text('image'),
-  createdAt: timestamp('createdAt').notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  createdAt: timestamp('createdAt', { withTimezone: true }).notNull(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull(),
+  banned: boolean('banned').default(false),
+  banReason: text('banReason'),
+  banExpires: timestamp('banExpires', { withTimezone: true }),
+  role: text('role').default('user'),
 })
 
 export const session = pgTable('session', {
-  id: text('id').primaryKey(),
-  expiresAt: timestamp('expiresAt').notNull(),
-  token: text('token').notNull().unique(),
-  createdAt: timestamp('createdAt').notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  id: uuid('id').primaryKey(),
+  userId: uuid('userId').notNull(),
+  token: text('token').unique().notNull(),
+  expiresAt: timestamp('expiresAt', { withTimezone: true }).notNull(),
+  createdAt: timestamp('createdAt', { withTimezone: true }).notNull(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull(),
   ipAddress: text('ipAddress'),
   userAgent: text('userAgent'),
-  userId: text('userId')
-    .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
+  activeOrganizationId: text('activeOrganizationId'),
+  impersonatedBy: text('impersonatedBy'),
 })
 
 export const account = pgTable('account', {
-  id: text('id').primaryKey(),
-  accountId: text('accountId').notNull(),
-  providerId: text('providerId').notNull(),
-  userId: text('userId')
-    .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
+  id: uuid('id').primaryKey(),
+  userId: uuid('userId').notNull(),
+  type: text('type').notNull(),
+  provider: text('provider').notNull(),
+  providerAccountId: text('providerAccountId').notNull(),
   accessToken: text('accessToken'),
   refreshToken: text('refreshToken'),
   idToken: text('idToken'),
-  accessTokenExpiresAt: timestamp('accessTokenExpiresAt'),
-  refreshTokenExpiresAt: timestamp('refreshTokenExpiresAt'),
+  accessTokenExpiresAt: timestamp('accessTokenExpiresAt', { withTimezone: true }),
+  refreshTokenExpiresAt: timestamp('refreshTokenExpiresAt', { withTimezone: true }),
   scope: text('scope'),
   password: text('password'),
-  createdAt: timestamp('createdAt').notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  createdAt: timestamp('createdAt', { withTimezone: true }).notNull(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull(),
 })
 
 export const verification = pgTable('verification', {
-  id: text('id').primaryKey(),
+  id: uuid('id').primaryKey(),
   identifier: text('identifier').notNull(),
   value: text('value').notNull(),
-  expiresAt: timestamp('expiresAt').notNull(),
-  createdAt: timestamp('createdAt').defaultNow(),
-  updatedAt: timestamp('updatedAt').defaultNow(),
+  expiresAt: timestamp('expiresAt', { withTimezone: true }).notNull(),
+  createdAt: timestamp('createdAt', { withTimezone: true }),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }),
 })
 
 // --- App tables - Subscriptions
