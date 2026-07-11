@@ -21,6 +21,8 @@ const authTranslations = {
     password: 'كلمة المرور',
     signIn: 'تسجيل الدخول',
     signUp: 'إنشاء حساب',
+    or: 'أو',
+    googleSignIn: 'الدخول عبر Google',
     noAccount: 'ليس لديك حساب؟',
     haveAccount: 'هل لديك حساب بالفعل؟',
     signUpLink: 'أنشئ واحد',
@@ -37,6 +39,8 @@ const authTranslations = {
     password: 'Password',
     signIn: 'Sign in',
     signUp: 'Sign up',
+    or: 'OR',
+    googleSignIn: 'Sign in with Google',
     noAccount: "Don't have an account?",
     haveAccount: 'Already have an account?',
     signUpLink: 'Sign up',
@@ -82,6 +86,22 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
     } catch (err) {
       console.error('[v0] Auth exception:', err)
       const errorMsg = err instanceof Error ? err.message : 'An unexpected error occurred'
+      setError(errorMsg)
+      setLoading(false)
+    }
+  }
+
+  const handleGoogleSignIn = async () => {
+    setError(null)
+    setLoading(true)
+    try {
+      await authClient.signIn.social({
+        provider: 'google',
+        callbackURL: '/',
+      })
+    } catch (err) {
+      console.error('[v0] Google sign-in error:', err)
+      const errorMsg = err instanceof Error ? err.message : 'Google sign-in failed'
       setError(errorMsg)
       setLoading(false)
     }
