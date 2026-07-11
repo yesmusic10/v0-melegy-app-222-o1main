@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create user if doesn't exist
-    const userId = await createUserFromPhone(formattedPhone, name, birthDate)
+    const userId = await createUserFromPhone(formattedPhone, name, birthDate, 'free')
     if (!userId) {
       return NextResponse.json(
         { message: 'Failed to create user' },
