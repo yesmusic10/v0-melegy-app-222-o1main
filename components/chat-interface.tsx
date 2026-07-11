@@ -7,6 +7,8 @@ import { ar } from 'date-fns/locale'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { addEgyptianFlavor, normalizeEgyptianText } from '@/lib/services/egyptianDialectService'
+import { ConversationMemoryService } from '@/lib/services/conversationMemoryService'
 
 // Declare Puter global
 declare global {
@@ -181,16 +183,28 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
         content: msg.content,
       }))
 
+      // Load user context and conversation memory
+      const userContext = await ConversationMemoryService.loadUserContext(userId, convId, chatHistory)
+      
+      // Extract facts to remember for future
+      const facts = ConversationMemoryService.extractFactsToRemember(userMessage.content)
+
+      // Build context-aware prompt with Egyptian personality
+      const systemPrompt = ConversationMemoryService.buildContextAwarePrompt(userContext, userMessage.content)
+
       // Call Puter AI
       const response = await puterRef.current.ai.chat(selectedModel, [
         ...chatHistory,
         { role: 'user', content: userMessage.content },
       ])
 
+      // Apply Egyptian dialect to response
+      const egyptianizedResponse = addEgyptianFlavor(normalizeEgyptianText(response))
+
       const assistantMessage: Message = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: response,
+        content: egyptianizedResponse,
         createdAt: new Date(),
       }
 
