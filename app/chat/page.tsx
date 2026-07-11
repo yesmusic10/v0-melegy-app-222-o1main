@@ -2,24 +2,33 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSession } from '@/lib/auth-client'
 import ChatInterface from '@/components/chat-interface'
 import { Loader2 } from 'lucide-react'
 
 export default function ChatPage() {
   const router = useRouter()
-  const { data: session, isPending } = useSession()
-  const [isRedirecting, setIsRedirecting] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [userName, setUserName] = useState<string | null>(null)
+  const [subscriptionPlan, setSubscriptionPlan] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!isPending && !session?.user) {
-      console.log('[v0] User not authenticated, redirecting to sign-in')
-      setIsRedirecting(true)
-      router.replace('/sign-in')
-    }
-  }, [session?.user, isPending, router])
+    const id = localStorage.getItem('userId')
+    const name = localStorage.getItem('userName')
+    const plan = localStorage.getItem('subscriptionPlan')
 
-  if (isPending || isRedirecting) {
+    if (!id) {
+      router.replace('/auth/sign-up')
+      return
+    }
+
+    setUserId(id)
+    setUserName(name || 'مستخدم')
+    setSubscriptionPlan(plan || 'free')
+    setLoading(false)
+  }, [router])
+
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
@@ -30,9 +39,9 @@ export default function ChatPage() {
     )
   }
 
-  if (!session?.user) {
+  if (!userId) {
     return null
   }
 
-  return <ChatInterface userId={session.user.id} userName={session.user.name || session.user.email || 'User'} />
+  return <ChatInterface userId={userId} userName={userName || 'مستخدم'} />
 }
