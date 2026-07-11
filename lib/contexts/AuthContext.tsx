@@ -42,7 +42,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const storedToken = cookieToken || localStorage.getItem('auth_token')
         
         if (storedToken) {
-          console.log('[v0] Found auth token, verifying...')
           // Set token first so it's available immediately
           setToken(storedToken)
           // Store in localStorage if it came from cookie
@@ -52,7 +51,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Verify token is still valid
           await verifyToken(storedToken)
         } else {
-          console.log('[v0] No auth token found')
           setLoading(false)
         }
       } catch (err) {
@@ -69,19 +67,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Helper function to get cookie value
   const getCookie = (name: string): string | null => {
     if (typeof document === 'undefined') return null
-    try {
-      const value = `; ${document.cookie}`
-      const parts = value.split(`; ${name}=`)
-      if (parts.length === 2) {
-        const cookieValue = parts.pop()?.split(';').shift() || null
-        if (cookieValue) {
-          console.log(`[v0] Found cookie ${name}:`, cookieValue.substring(0, 20) + '...')
-        }
-        return cookieValue
-      }
-    } catch (err) {
-      console.error(`[v0] Error reading cookie ${name}:`, err)
-    }
+    const value = `; ${document.cookie}`
+    const parts = value.split(`; ${name}=`)
+    if (parts.length === 2) return parts.pop()?.split(';').shift() || null
     return null
   }
 
