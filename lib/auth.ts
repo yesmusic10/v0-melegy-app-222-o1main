@@ -1,40 +1,50 @@
-import { betterAuth } from "better-auth"
-import { Pool } from "pg"
+import { betterAuth } from 'better-auth'
+import { pool } from '@/lib/db'
 
-let authInstance: ReturnType<typeof betterAuth> | null = null
-
-function getAuth() {
-  if (!authInstance) {
-    const pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-    })
-
-    authInstance = betterAuth({
-      database: pool,
-      secret: process.env.BETTER_AUTH_SECRET,
-      baseURL: process.env.BETTER_AUTH_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL 
-        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-        : process.env.VERCEL_URL 
+export const auth = betterAuth({
+  database: pool,
+  secret: process.env.BETTER_AUTH_SECRET,
+  baseURL:
+    process.env.BETTER_AUTH_URL ??
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : process.env.VERCEL_URL
         ? `https://${process.env.VERCEL_URL}`
-        : `http://localhost:3000`),
-      trustedOrigins: [
-        process.env.BETTER_AUTH_URL || "",
-        process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "",
-        process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "",
-        process.env.V0_RUNTIME_URL || "",
-      ].filter(Boolean),
-      emailAndPassword: {
-        enabled: true,
-      },
-      plugins: [],
-      advanced: {
-        defaultCookieAttributes: process.env.NODE_ENV === "development" 
-          ? { sameSite: "none", secure: true }
-          : undefined,
-      },
-    })
-  }
-  return authInstance
-}
-
-export { getAuth as auth }
+        : process.env.V0_RUNTIME_URL),
+  emailAndPassword: {
+    enabled: true,
+    autoSignIn: true,
+  },
+  ...(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID &&
+  process.env.GOOGLE_CLIENT_SECRET
+    ? {
+        socialProviders: {
+          google: {
+            clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          },
+        },
+      }
+    : {}),
+  trustedOrigins: [
+    ...(process.env.V0_RUNTIME_URL ? [process.env.V0_RUNTIME_URL] : []),
+    ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+    ...(process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? [`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`]
+      : []),
+  ],
+  session: {
+    expiresIn: 60 * 60 * 24 * 7, // 7 days
+    updateAge: 60 * 60 * 24, // 1 day
+  },
+  ...(process.env.NODE_ENV === 'development'
+    ? {
+        advanced: {
+          defaultCookieAttributes: {
+            sameSite: 'none' as const,
+            secure: true,
+          },
+        },
+      }
+    : {}),
+})
