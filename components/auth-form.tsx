@@ -28,7 +28,6 @@ const authTranslations = {
     signUpLink: 'أنشئ واحد',
     signInLink: 'تسجيل الدخول',
     error: 'حدث خطأ',
-    googleError: 'فشل تسجيل الدخول عبر Google',
   },
   en: {
     welcome: 'Welcome back',
@@ -47,7 +46,6 @@ const authTranslations = {
     signUpLink: 'Sign up',
     signInLink: 'Sign in',
     error: 'An error occurred',
-    googleError: 'Google sign-in failed',
   },
 }
 
@@ -83,7 +81,7 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
         return
       }
 
-      router.push('/')
+      router.push('/chat')
       router.refresh()
     } catch (err) {
       console.error('[v0] Auth exception:', err)
@@ -102,10 +100,14 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
         callbackURL: '/',
       })
     } catch (err) {
-      setError(t.googleError)
+      console.error('[v0] Google sign-in error:', err)
+      const errorMsg = err instanceof Error ? err.message : 'Google sign-in failed'
+      setError(errorMsg)
       setLoading(false)
     }
   }
+
+
 
   return (
     <main className={`min-h-screen bg-background flex items-center justify-center px-4 ${isRTL ? 'rtl' : 'ltr'}`} dir={isRTL ? 'rtl' : 'ltr'}>
