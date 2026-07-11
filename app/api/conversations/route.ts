@@ -1,21 +1,21 @@
-import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { conversation, message } from '@/lib/db/schema'
 import { eq, desc } from 'drizzle-orm'
-import { headers } from 'next/headers'
+import { cookies } from 'next/headers'
 import { nanoid } from 'nanoid'
 
 export async function GET(req: Request) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() })
-    if (!session?.user) {
+    const cookieStore = await cookies()
+    const userId = cookieStore.get('userId')?.value
+    if (!userId) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const conversations = await db
       .select()
       .from(conversation)
-      .where(eq(conversation.userId, session.user.id))
+      .where(eq(conversation.userId, userId))
       .orderBy(desc(conversation.updatedAt))
 
     // Fetch messages for each conversation
@@ -35,8 +35,9 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() })
-    if (!session?.user) {
+    const cookieStore = await cookies()
+    const userId = cookieStore.get('userId')?.value
+    if (!userId) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -57,7 +58,7 @@ export async function POST(req: Request) {
 
     await db.insert(conversation).values({
       id,
-      userId: session.user.id,
+      userId,
       title: title?.trim() || 'New Conversation',
       model: selectedModel,
       description: description?.trim(),
@@ -67,7 +68,7 @@ export async function POST(req: Request) {
 
     return Response.json({
       id,
-      userId: session.user.id,
+      userId,
       title: title?.trim() || 'New Conversation',
       model: selectedModel,
       description: description?.trim(),

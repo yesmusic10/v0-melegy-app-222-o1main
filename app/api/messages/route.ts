@@ -1,14 +1,14 @@
-import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { message, conversation } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
-import { headers } from 'next/headers'
+import { cookies } from 'next/headers'
 import { nanoid } from 'nanoid'
 
 export async function POST(req: Request) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() })
-    if (!session?.user) {
+    const cookieStore = await cookies()
+    const userId = cookieStore.get('userId')?.value
+    if (!userId) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     const conv = await db
       .select()
       .from(conversation)
-      .where(and(eq(conversation.id, conversationId), eq(conversation.userId, session.user.id)))
+      .where(and(eq(conversation.id, conversationId), eq(conversation.userId, userId)))
 
     if (conv.length === 0) {
       return Response.json({ error: 'Conversation not found' }, { status: 404 })
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     await db.insert(message).values({
       id,
       conversationId,
-      userId: session.user.id,
+      userId,
       role: role || 'user',
       content,
       metadata,
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
     return Response.json({
       id,
       conversationId,
-      userId: session.user.id,
+      userId,
       role: role || 'user',
       content,
       metadata,

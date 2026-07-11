@@ -1,15 +1,21 @@
 'use server'
 
-import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { conversation, message, subscription } from '@/lib/db/schema'
+import { conversation, message, subscription, userPhone } from '@/lib/db/schema'
 import { eq, and, desc } from 'drizzle-orm'
 import { headers } from 'next/headers'
+import { cookies } from 'next/headers'
 
 async function getUserId() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error('Unauthorized')
-  return session.user.id
+  const cookieStore = await cookies()
+  const userId = cookieStore.get('userId')?.value
+  if (!userId) throw new Error('Unauthorized')
+  
+  // Verify user exists
+  const user = await db.select().from(userPhone).where(eq(userPhone.id, userId)).then(res => res[0])
+  if (!user) throw new Error('User not found')
+  
+  return userId
 }
 
 // Plan limits

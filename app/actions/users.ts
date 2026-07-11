@@ -1,15 +1,15 @@
 'use server'
 
-import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { subscription, userPreference, user } from '@/lib/db/schema'
+import { subscription, userPreference, userPhone } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
-import { headers } from 'next/headers'
+import { cookies } from 'next/headers'
 
 async function getUserId() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error('Unauthorized')
-  return session.user.id
+  const cookieStore = await cookies()
+  const userId = cookieStore.get('userId')?.value
+  if (!userId) throw new Error('Unauthorized')
+  return userId
 }
 
 export async function getOrCreateSubscription() {
@@ -68,14 +68,13 @@ export async function getOrCreateUserPreference() {
 }
 
 export async function getCurrentUser() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) return null
+  const userId = await getUserId()
 
   const userData = await db
     .select()
-    .from(user)
-    .where(eq(user.id, session.user.id))
+    .from(userPhone)
+    .where(eq(userPhone.id, userId))
     .then((res) => res[0])
 
-  return userData
+  return userData || null
 }
