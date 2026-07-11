@@ -33,7 +33,7 @@ export async function createConversation(title?: string) {
   const sub = await db
     .select()
     .from(subscription)
-    .where(eq(subscription.userId, userId))
+    .where(eq(subscription.userid, userId))
     .then((res) => res[0])
 
   if (!sub) throw new Error('No subscription found')
@@ -44,7 +44,7 @@ export async function createConversation(title?: string) {
   const conversationCount = await db
     .select()
     .from(conversation)
-    .where(eq(conversation.userId, userId))
+    .where(eq(conversation.userid, userId))
     .then((res) => res.length)
 
   if (conversationCount >= limits.conversations) {
@@ -55,9 +55,9 @@ export async function createConversation(title?: string) {
 
   await db.insert(conversation).values({
     id,
-    userId,
+    userid: userId,
     title: title || 'New Conversation',
-    messageCount: 0,
+    messagecount: 0,
   })
 
   return { id, title: title || 'New Conversation' }
@@ -69,8 +69,8 @@ export async function getConversations() {
   return db
     .select()
     .from(conversation)
-    .where(and(eq(conversation.userId, userId), eq(conversation.isArchived, false)))
-    .orderBy(desc(conversation.updatedAt))
+    .where(and(eq(conversation.userid, userId), eq(conversation.isarchived, false)))
+    .orderBy(desc(conversation.updatedat))
 }
 
 export async function getConversationMessages(conversationId: string) {
@@ -79,7 +79,7 @@ export async function getConversationMessages(conversationId: string) {
   const conv = await db
     .select()
     .from(conversation)
-    .where(and(eq(conversation.id, conversationId), eq(conversation.userId, userId)))
+    .where(and(eq(conversation.id, conversationId), eq(conversation.userid, userId)))
     .then((res) => res[0])
 
   if (!conv) throw new Error('Conversation not found')
@@ -87,8 +87,8 @@ export async function getConversationMessages(conversationId: string) {
   const messages = await db
     .select()
     .from(message)
-    .where(eq(message.conversationId, conversationId))
-    .orderBy(desc(message.createdAt))
+    .where(eq(message.conversationid, conversationId))
+    .orderBy(desc(message.createdat))
 
   return messages.map((msg) => ({
     ...msg,
@@ -108,7 +108,7 @@ export async function addMessage(
   const conv = await db
     .select()
     .from(conversation)
-    .where(and(eq(conversation.id, conversationId), eq(conversation.userId, userId)))
+    .where(and(eq(conversation.id, conversationId), eq(conversation.userid, userId)))
     .then((res) => res[0])
 
   if (!conv) throw new Error('Conversation not found')
@@ -117,8 +117,8 @@ export async function addMessage(
 
   await db.insert(message).values({
     id,
-    conversationId,
-    userId,
+    conversationid: conversationId,
+    userid: userId,
     role,
     content,
     metadata: metadata ? JSON.stringify(metadata) : null,
@@ -127,7 +127,7 @@ export async function addMessage(
   // Update message count
   await db
     .update(conversation)
-    .set({ messageCount: conv.messageCount + 1, updatedAt: new Date() })
+    .set({ messagecount: conv.messagecount + 1, updatedat: new Date() })
     .where(eq(conversation.id, conversationId))
 
   return { id, role, content }
@@ -139,13 +139,13 @@ export async function deleteConversation(conversationId: string) {
   const conv = await db
     .select()
     .from(conversation)
-    .where(and(eq(conversation.id, conversationId), eq(conversation.userId, userId)))
+    .where(and(eq(conversation.id, conversationId), eq(conversation.userid, userId)))
     .then((res) => res[0])
 
   if (!conv) throw new Error('Conversation not found')
 
   // Delete all messages in conversation
-  await db.delete(message).where(eq(message.conversationId, conversationId))
+  await db.delete(message).where(eq(message.conversationid, conversationId))
 
   // Delete conversation
   await db.delete(conversation).where(eq(conversation.id, conversationId))
@@ -157,13 +157,13 @@ export async function archiveConversation(conversationId: string) {
   const conv = await db
     .select()
     .from(conversation)
-    .where(and(eq(conversation.id, conversationId), eq(conversation.userId, userId)))
+    .where(and(eq(conversation.id, conversationId), eq(conversation.userid, userId)))
     .then((res) => res[0])
 
   if (!conv) throw new Error('Conversation not found')
 
   await db
     .update(conversation)
-    .set({ isArchived: true, updatedAt: new Date() })
+    .set({ isarchived: true, updatedat: new Date() })
     .where(eq(conversation.id, conversationId))
 }

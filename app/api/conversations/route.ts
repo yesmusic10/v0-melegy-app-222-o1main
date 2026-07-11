@@ -15,13 +15,13 @@ export async function GET(req: Request) {
     const conversations = await db
       .select()
       .from(conversation)
-      .where(eq(conversation.userId, userId))
+      .where(eq(conversation.userid, userId))
       .orderBy(desc(conversation.updatedAt))
 
     // Fetch messages for each conversation
     const conversationsWithMessages = await Promise.all(
       conversations.map(async (conv) => {
-        const messages = await db.select().from(message).where(eq(message.conversationId, conv.id))
+        const messages = await db.select().from(message).where(eq(message.conversationid, conv.id))
         return { ...conv, messages }
       })
     )

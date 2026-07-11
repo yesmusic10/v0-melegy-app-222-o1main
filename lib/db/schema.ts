@@ -64,69 +64,69 @@ export const verification = pgTable('verification', {
 // --- App tables - Subscriptions
 export const subscription = pgTable('subscription', {
   id: text('id').primaryKey(),
-  userId: text('userId').notNull(),
+  userid: text('userid').notNull(),
   plan: text('plan').notNull().default('free'),
   status: text('status').notNull().default('active'),
-  currentMonthUsage: integer('currentMonthUsage').notNull().default(0),
-  createdAt: timestamp('createdAt').notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
-  expiresAt: timestamp('expiresAt'),
+  currentmonthusage: integer('currentmonthusage').notNull().default(0),
+  createdat: timestamp('createdat').notNull().defaultNow(),
+  updatedat: timestamp('updatedat').notNull().defaultNow(),
+  expiresat: timestamp('expiresat'),
 })
 
 // --- App tables - Conversations/Chats
 export const conversation = pgTable('conversation', {
   id: text('id').primaryKey(),
-  userId: text('userId').notNull(),
+  userid: text('userid').notNull(),
   title: text('title').notNull().default('New Conversation'),
   description: text('description'),
   model: text('model').notNull().default('qwen-2.5-72b-instruct'),
-  messageCount: integer('messageCount').notNull().default(0),
-  isArchived: boolean('isArchived').notNull().default(false),
-  createdAt: timestamp('createdAt').notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  messagecount: integer('messagecount').notNull().default(0),
+  isarchived: boolean('isarchived').notNull().default(false),
+  createdat: timestamp('createdat').notNull().defaultNow(),
+  updatedat: timestamp('updatedat').notNull().defaultNow(),
 })
 
 // --- App tables - Messages
 export const message = pgTable('message', {
   id: text('id').primaryKey(),
-  conversationId: text('conversationId').notNull(),
-  userId: text('userId').notNull(),
+  conversationid: text('conversationid').notNull(),
+  userid: text('userid').notNull(),
   role: text('role').notNull(),
   content: text('content').notNull(),
   metadata: jsonb('metadata'),
-  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  createdat: timestamp('createdat').notNull().defaultNow(),
 })
 
 // --- Phone OTP Authentication
-export const userPhone = pgTable('userPhone', {
+export const userPhone = pgTable('userphone', {
   id: text('id').primaryKey(),
   phone: text('phone').unique().notNull(),
   name: text('name').notNull(),
-  birthDate: text('birthDate').notNull(), // YYYY-MM-DD format
-  subscriptionPlan: text('subscriptionPlan').notNull().default('free'),
-  isVerified: boolean('isVerified').notNull().default(false),
-  createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
+  birthdate: text('birthdate').notNull(), // YYYY-MM-DD format
+  subscriptionplan: text('subscriptionplan').notNull().default('free'),
+  isverified: boolean('isverified').notNull().default(false),
+  createdat: timestamp('createdat', { withTimezone: true }).notNull().defaultNow(),
+  updatedat: timestamp('updatedat', { withTimezone: true }).notNull().defaultNow(),
 })
 
-export const otpVerification = pgTable('otpVerification', {
+export const otpVerification = pgTable('otpverification', {
   id: text('id').primaryKey(),
   phone: text('phone').notNull(),
   otp: text('otp').notNull(),
   attempts: integer('attempts').notNull().default(0),
-  expiresAt: timestamp('expiresAt', { withTimezone: true }).notNull(),
-  createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+  expiresat: timestamp('expiresat', { withTimezone: true }).notNull(),
+  createdat: timestamp('createdat', { withTimezone: true }).notNull().defaultNow(),
 })
 
 // --- App tables - User preferences
 export const userPreference = pgTable('userPreference', {
   id: text('id').primaryKey(),
-  userId: text('userId').notNull().unique(),
+  userid: text('userid').notNull().unique(),
   theme: text('theme').notNull().default('light'),
   language: text('language').notNull().default('ar'),
-  emailNotifications: boolean('emailNotifications').notNull().default(true),
-  createdAt: timestamp('createdAt').notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  emailnotifications: boolean('emailnotifications').notNull().default(true),
+  createdat: timestamp('createdat').notNull().defaultNow(),
+  updatedat: timestamp('updatedat').notNull().defaultNow(),
 })
 
 // --- Relations
@@ -151,14 +151,14 @@ export const accountRelations = relations(account, ({ one }) => ({
 
 export const subscriptionRelations = relations(subscription, ({ one }) => ({
   user: one(user, {
-    fields: [subscription.userId],
+    fields: [subscription.userid],
     references: [user.id],
   }),
 }))
 
 export const conversationRelations = relations(conversation, ({ one, many }) => ({
   user: one(user, {
-    fields: [conversation.userId],
+    fields: [conversation.userid],
     references: [user.id],
   }),
   messages: many(message),
@@ -166,18 +166,18 @@ export const conversationRelations = relations(conversation, ({ one, many }) => 
 
 export const messageRelations = relations(message, ({ one }) => ({
   conversation: one(conversation, {
-    fields: [message.conversationId],
+    fields: [message.conversationid],
     references: [conversation.id],
   }),
   user: one(user, {
-    fields: [message.userId],
+    fields: [message.userid],
     references: [user.id],
   }),
 }))
 
 export const userPreferenceRelations = relations(userPreference, ({ one }) => ({
   user: one(user, {
-    fields: [userPreference.userId],
+    fields: [userPreference.userid],
     references: [user.id],
   }),
 }))

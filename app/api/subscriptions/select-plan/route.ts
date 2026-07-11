@@ -29,8 +29,8 @@ export async function POST(request: NextRequest) {
     await db
       .update(userPhone)
       .set({
-        subscriptionPlan: plan,
-        updatedAt: new Date(),
+        subscriptionplan: plan,
+        updatedat: new Date(),
       })
       .where(eq(userPhone.id, userId))
 
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     const existing = await db
       .select()
       .from(subscription)
-      .where(eq(subscription.userId, userId))
+      .where(eq(subscription.userid, userId))
 
     if (existing.length > 0) {
       // Update existing subscription
@@ -47,18 +47,18 @@ export async function POST(request: NextRequest) {
         .set({
           plan,
           status: 'active',
-          updatedAt: new Date(),
+          updatedat: new Date(),
         })
-        .where(eq(subscription.userId, userId))
+        .where(eq(subscription.userid, userId))
     } else {
       // Create new subscription
       const subscriptionId = nanoid()
       await db.insert(subscription).values({
         id: subscriptionId,
-        userId,
+        userid: userId,
         plan,
         status: 'active',
-        currentMonthUsage: 0,
+        currentmonthusage: 0,
       })
     }
 
