@@ -82,7 +82,7 @@ export default function RootLayout({
         />
         
         <meta charSet="UTF-8" />
-        <meta name="description" content={metadata.description} />
+        <meta name="description" content={metadata.description || "Egyptian AI Assistant"} />
         <meta name="theme-color" content="#f8f9fa" />
         <meta name="color-scheme" content="light dark" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover" />
