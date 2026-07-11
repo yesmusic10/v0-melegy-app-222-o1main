@@ -5,21 +5,21 @@ import { Button } from "@/components/ui/button"
 import { MessageSquare, ArrowDown, Smartphone, Apple, X, Share, PlusSquare } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useApp } from "@/lib/contexts/AppContext"
-import { useAuth } from "@/lib/contexts/AuthContext"
+import { useSession } from "@/lib/auth-client"
 
 export function Hero() {
   const { translations, language } = useApp()
-  const { user, loading } = useAuth()
+  const { data: session, isPending } = useSession()
   const router = useRouter()
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const [installed, setInstalled] = useState(false)
   const [showAppleGuide, setShowAppleGuide] = useState(false)
 
   const handleStartChat = () => {
-    if (user) {
+    if (session?.user) {
       router.push("/chat")
     } else {
-      router.push("/auth")
+      router.push("/sign-in")
     }
   }
 
@@ -90,7 +90,7 @@ export function Hero() {
         <Button
           size="lg"
           onClick={handleStartChat}
-          disabled={loading}
+          disabled={isPending}
           className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
             boxShadow: '0 4px 14px rgba(59,130,246,0.35), inset 0 1px 0 rgba(255,255,255,0.2)',

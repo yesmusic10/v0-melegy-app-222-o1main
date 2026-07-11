@@ -14,38 +14,34 @@ export const user = pgTable('user', {
 
 export const session = pgTable('session', {
   id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
   expiresAt: timestamp('expiresAt').notNull(),
-  token: text('token').unique().notNull(),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   updatedAt: timestamp('updatedAt').defaultNow().notNull(),
-  ipAddress: text('ipAddress'),
-  userAgent: text('userAgent'),
-  userId: text('userId').notNull(),
 })
 
 export const account = pgTable('account', {
   id: text('id').primaryKey(),
   userId: text('userId').notNull(),
-  accountId: text('accountId').notNull(),
-  providerId: text('providerId').notNull(),
+  type: text('type').notNull(),
+  provider: text('provider').notNull(),
+  providerAccountId: text('providerAccountId').notNull(),
   accessToken: text('accessToken'),
   refreshToken: text('refreshToken'),
-  idToken: text('idToken'),
-  accessTokenExpiresAt: timestamp('accessTokenExpiresAt'),
-  refreshTokenExpiresAt: timestamp('refreshTokenExpiresAt'),
-  scope: text('scope'),
-  password: text('password'),
+  expiresAt: integer('expiresAt'),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   updatedAt: timestamp('updatedAt').defaultNow().notNull(),
 })
 
 export const verification = pgTable('verification', {
   id: text('id').primaryKey(),
-  identifier: text('identifier').notNull(),
-  value: text('value').notNull(),
+  userId: text('userId').notNull(),
+  email: text('email').notNull(),
+  token: text('token').unique().notNull(),
+  type: text('type').notNull(),
   expiresAt: timestamp('expiresAt').notNull(),
-  createdAt: timestamp('createdAt'),
-  updatedAt: timestamp('updatedAt'),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
 })
 
 // Relations
@@ -86,7 +82,7 @@ export const conversation = pgTable('conversation', {
   userId: text('userId').notNull(),
   title: text('title').notNull().default('New Conversation'),
   description: text('description'),
-  model: text('model').notNull().default('gpt-3.5-turbo'),
+  model: text('model').notNull().default('qwen-2.5-72b-instruct'),
   messageCount: integer('messageCount').notNull().default(0),
   isArchived: boolean('isArchived').notNull().default(false),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
