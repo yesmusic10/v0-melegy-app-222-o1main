@@ -81,7 +81,7 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
         return
       }
 
-      router.push('/')
+      router.push('/chat')
       router.refresh()
     } catch (err) {
       console.error('[v0] Auth exception:', err)
