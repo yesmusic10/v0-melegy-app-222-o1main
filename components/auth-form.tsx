@@ -21,14 +21,11 @@ const authTranslations = {
     password: 'كلمة المرور',
     signIn: 'تسجيل الدخول',
     signUp: 'إنشاء حساب',
-    or: 'أو',
-    googleSignIn: 'الدخول عبر Google',
     noAccount: 'ليس لديك حساب؟',
     haveAccount: 'هل لديك حساب بالفعل؟',
     signUpLink: 'أنشئ واحد',
     signInLink: 'تسجيل الدخول',
     error: 'حدث خطأ',
-    googleError: 'فشل تسجيل الدخول عبر Google',
   },
   en: {
     welcome: 'Welcome back',
@@ -40,14 +37,11 @@ const authTranslations = {
     password: 'Password',
     signIn: 'Sign in',
     signUp: 'Sign up',
-    or: 'OR',
-    googleSignIn: 'Sign in with Google',
     noAccount: "Don't have an account?",
     haveAccount: 'Already have an account?',
     signUpLink: 'Sign up',
     signInLink: 'Sign in',
     error: 'An error occurred',
-    googleError: 'Google sign-in failed',
   },
 }
 
@@ -93,19 +87,7 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
     }
   }
 
-  const handleGoogleSignIn = async () => {
-    setError(null)
-    setLoading(true)
-    try {
-      await authClient.signIn.social({
-        provider: 'google',
-        callbackURL: '/',
-      })
-    } catch (err) {
-      setError(t.googleError)
-      setLoading(false)
-    }
-  }
+
 
   return (
     <main className={`min-h-screen bg-background flex items-center justify-center px-4 ${isRTL ? 'rtl' : 'ltr'}`} dir={isRTL ? 'rtl' : 'ltr'}>
