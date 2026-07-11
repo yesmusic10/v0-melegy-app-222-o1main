@@ -15,20 +15,22 @@ export function PhoneSignupForm({ onSuccess }: PhoneSignupFormProps) {
   const [step, setStep] = useState<'signup' | 'verify'>('signup')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   
   // Form state
   const [phone, setPhone] = useState('')
   const [name, setName] = useState('')
   const [birthDate, setBirthDate] = useState('')
   const [otp, setOtp] = useState('')
+  const [devOtp, setDevOtp] = useState<string | null>(null)
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
+    setSuccess(null)
 
     try {
-      // Format phone number
       const formattedPhone = phone.replace(/\D/g, '')
       if (formattedPhone.length < 10) {
         setError('رقم الهاتف غير صحيح')
@@ -52,7 +54,15 @@ export function PhoneSignupForm({ onSuccess }: PhoneSignupFormProps) {
         throw new Error(data.message || 'فشل إرسال الكود')
       }
 
-      setStep('verify')
+      setSuccess('تم إرسال الكود بنجاح! تحقق من رسائل SMS')
+      
+      if (data.otp) {
+        setDevOtp(data.otp)
+      }
+      
+      setTimeout(() => {
+        setStep('verify')
+      }, 1000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'حدث خطأ')
     } finally {
@@ -88,7 +98,6 @@ export function PhoneSignupForm({ onSuccess }: PhoneSignupFormProps) {
         throw new Error(data.message || 'فشل التحقق من الكود')
       }
 
-      // Store session token
       if (data.token) {
         localStorage.setItem('authToken', data.token)
         localStorage.setItem('userId', data.userId)
@@ -116,7 +125,6 @@ export function PhoneSignupForm({ onSuccess }: PhoneSignupFormProps) {
       otp: 'الكود',
       verify: 'تحقق',
       back: 'العودة',
-      error: 'خطأ',
     },
     en: {
       title: 'Create Your Account',
@@ -129,11 +137,10 @@ export function PhoneSignupForm({ onSuccess }: PhoneSignupFormProps) {
       otp: 'Code',
       verify: 'Verify',
       back: 'Back',
-      error: 'Error',
     },
   }
 
-  const t = signupTranslations.ar // Default to Arabic
+  const t = signupTranslations.ar
 
   if (step === 'verify') {
     return (
@@ -142,6 +149,19 @@ export function PhoneSignupForm({ onSuccess }: PhoneSignupFormProps) {
           <h2 className="text-2xl font-bold">{t.verifyTitle}</h2>
           <p className="text-muted-foreground">{t.verifyDesc}</p>
         </div>
+
+        {success && (
+          <div className="p-3 bg-green-100 text-green-700 rounded-md text-sm">
+            {success}
+          </div>
+        )}
+
+        {devOtp && (
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-md text-center">
+            <p className="text-xs text-gray-600 mb-2">🔧 وضع التطوير - الكود:</p>
+            <p className="text-2xl font-bold text-blue-600 tracking-widest">{devOtp}</p>
+          </div>
+        )}
 
         <form onSubmit={handleVerifyOTP} className="space-y-4">
           <div>
@@ -230,6 +250,12 @@ export function PhoneSignupForm({ onSuccess }: PhoneSignupFormProps) {
         {error && (
           <div className="p-3 bg-red-100 text-red-700 rounded-md text-sm">
             {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="p-3 bg-green-100 text-green-700 rounded-md text-sm">
+            {success}
           </div>
         )}
 
