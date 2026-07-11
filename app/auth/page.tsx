@@ -33,14 +33,21 @@ export default function AuthPage() {
     try {
       setIsRedirecting(true)
       const res = await fetch('/api/auth/google-oauth')
-      const data = await res.json()
-      if (data.authUrl) {
-        window.location.href = data.authUrl
-      } else {
-        setIsRedirecting(false)
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`)
       }
+      
+      const data = await res.json()
+      
+      if (!data.authUrl) {
+        throw new Error('No authUrl in response')
+      }
+      
+      window.location.href = data.authUrl
     } catch (error) {
       console.error('[v0] Google login error:', error)
+      alert('فشل في بدء تسجيل الدخول. حاول مرة أخرى.')
       setIsRedirecting(false)
     }
   }

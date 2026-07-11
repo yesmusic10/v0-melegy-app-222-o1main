@@ -97,13 +97,17 @@ export async function GET(request: NextRequest) {
     }
 
     // ── 3. Find or create user ─────────────────────────────────────────────────
+    console.log('[v0] Looking up user by Google ID:', googleId)
     let user = await getUserByGoogleId(googleId)
 
     if (!user) {
+      console.log('[v0] User not found, checking by email:', email)
       const existing = await getUserByEmail(email)
       if (existing) {
+        console.log('[v0] User exists by email, updating with Google ID')
         user = await updateUser(existing.id, { google_id: googleId })
       } else {
+        console.log('[v0] Creating new user')
         user = await createUser({
           email,
           google_id: googleId,
@@ -111,18 +115,23 @@ export async function GET(request: NextRequest) {
           last_name: lastName ?? null,
         })
       }
+    } else {
+      console.log('[v0] User found by Google ID')
     }
 
     if (!user) {
+      console.error('[v0] User creation failed for:', email)
       return NextResponse.redirect(
         new URL('/auth?error=user_creation_failed', request.url)
       )
     }
 
     // ── 4. Create session ──────────────────────────────────────────────────────
+    console.log('[v0] Creating session for user:', user.id)
     const sessionToken = randomBytes(32).toString('hex')
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
     await createSession(user.id, sessionToken, expiresAt)
+    console.log('[v0] Session created successfully')
 
     // ── 5. Determine chat destination based on active subscription ─────────────
     let chatDestination = '/chat' // default (starter / free)
