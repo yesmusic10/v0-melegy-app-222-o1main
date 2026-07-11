@@ -39,7 +39,8 @@ export default function AuthPage() {
       } else {
         setIsRedirecting(false)
       }
-    } catch {
+    } catch (error) {
+      console.error('[v0] Google login error:', error)
       setIsRedirecting(false)
     }
   }
@@ -139,27 +140,29 @@ export default function AuthPage() {
           <button
             onClick={handleGoogleLogin}
             disabled={isRedirecting}
-            className={`w-full flex items-center justify-center gap-3 rounded-xl px-5 py-3.5 font-semibold transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed ${isDark ? 'text-gray-100' : 'text-gray-700'}`}
+            type="button"
+            className={`relative z-10 w-full flex items-center justify-center gap-3 rounded-xl px-5 py-3.5 font-semibold transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed hover:scale-105 active:scale-95 ${isDark ? 'text-gray-100' : 'text-gray-700'}`}
             style={{
               background: isDark ? '#2d3748' : '#ffffff',
               border: `1.5px solid ${isDark ? '#4b5563' : '#e2e8f0'}`,
               boxShadow: isDark
                 ? '0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)'
                 : '0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
+              cursor: isRedirecting ? 'not-allowed' : 'pointer',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = isDark
-                ? '0 4px 16px rgba(59,130,246,0.2), inset 0 1px 0 rgba(255,255,255,0.05)'
-                : '0 4px 16px rgba(59,130,246,0.12), inset 0 1px 0 rgba(255,255,255,0.9)'
-              e.currentTarget.style.borderColor = isDark ? '#60a5fa' : '#93c5fd'
-              e.currentTarget.style.transform = 'translateY(-1px)'
+              if (!isRedirecting) {
+                e.currentTarget.style.boxShadow = isDark
+                  ? '0 4px 16px rgba(59,130,246,0.2), inset 0 1px 0 rgba(255,255,255,0.05)'
+                  : '0 4px 16px rgba(59,130,246,0.12), inset 0 1px 0 rgba(255,255,255,0.9)'
+                e.currentTarget.style.borderColor = isDark ? '#60a5fa' : '#93c5fd'
+              }
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.boxShadow = isDark
                 ? '0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)'
                 : '0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)'
               e.currentTarget.style.borderColor = isDark ? '#4b5563' : '#e2e8f0'
-              e.currentTarget.style.transform = 'translateY(0)'
             }}
           >
             {/* Google SVG */}
