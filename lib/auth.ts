@@ -1,5 +1,7 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { google } from 'better-auth/social-providers'
+import type { BetterAuthOptions } from 'better-auth'
 import { db, pool } from '@/lib/db'
 import * as schema from '@/lib/db/schema'
 
@@ -20,7 +22,7 @@ const trustedOrigins = [
     : []),
 ]
 
-export const auth = betterAuth({
+const authConfig: BetterAuthOptions = {
   database: drizzleAdapter(db, {
     provider: 'pg',
     schema,
@@ -32,6 +34,17 @@ export const auth = betterAuth({
     enabled: true,
     autoSignIn: true,
   },
+  ...(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID &&
+  process.env.GOOGLE_CLIENT_SECRET
+    ? {
+        socialProviders: {
+          google: google({
+            clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          }) as any,
+        },
+      }
+    : {}),
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // 1 day
@@ -48,4 +61,6 @@ export const auth = betterAuth({
             secure: true,
           },
   },
-})
+}
+
+export const auth = betterAuth(authConfig)
