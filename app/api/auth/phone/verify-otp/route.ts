@@ -57,9 +57,16 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     )
 
-    // Set secure cookie
+    // Set secure cookies
     response.cookies.set('authToken', token, {
       httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+    })
+
+    response.cookies.set('userId', user.id, {
+      httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60, // 30 days
