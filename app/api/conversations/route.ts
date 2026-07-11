@@ -41,17 +41,41 @@ export async function POST(req: Request) {
     }
 
     const { title, model, description } = await req.json()
+    
+    // Validate model
+    const validModels = [
+      'qwen-2.5-72b-instruct',
+      'qwen-2.5-32b-instruct',
+      'qwen-2.5-14b-instruct',
+      'qwen-2.5-coder-32b-instruct',
+      'qwen-2.5-7b-instruct',
+    ]
+    const selectedModel = validModels.includes(model) ? model : 'qwen-2.5-72b-instruct'
+    
     const id = nanoid()
+    const now = new Date()
 
-    const newConversation = await db.insert(conversation).values({
+    await db.insert(conversation).values({
       id,
       userId: session.user.id,
-      title: title || 'New Conversation',
-      model: model || 'qwen-2.5-72b-instruct',
-      description,
+      title: title?.trim() || 'New Conversation',
+      model: selectedModel,
+      description: description?.trim(),
+      createdAt: now,
+      updatedAt: now,
     })
 
-    return Response.json({ id, title: title || 'New Conversation', model }, { status: 201 })
+    return Response.json({
+      id,
+      userId: session.user.id,
+      title: title?.trim() || 'New Conversation',
+      model: selectedModel,
+      description: description?.trim(),
+      messageCount: 0,
+      isArchived: false,
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+    }, { status: 201 })
   } catch (error) {
     console.error('[v0] Error creating conversation:', error)
     return Response.json({ error: 'Internal server error' }, { status: 500 })

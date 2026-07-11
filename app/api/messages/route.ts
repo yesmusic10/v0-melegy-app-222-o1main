@@ -25,13 +25,16 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Conversation not found' }, { status: 404 })
     }
 
-    const newMessage = await db.insert(message).values({
+    const now = new Date()
+    
+    await db.insert(message).values({
       id,
       conversationId,
       userId: session.user.id,
-      role,
+      role: role || 'user',
       content,
       metadata,
+      createdAt: now,
     })
 
     // Update conversation's message count and updatedAt
@@ -39,11 +42,19 @@ export async function POST(req: Request) {
       .update(conversation)
       .set({
         messageCount: conv[0].messageCount + 1,
-        updatedAt: new Date(),
+        updatedAt: now,
       })
       .where(eq(conversation.id, conversationId))
 
-    return Response.json({ id, role, content }, { status: 201 })
+    return Response.json({
+      id,
+      conversationId,
+      userId: session.user.id,
+      role: role || 'user',
+      content,
+      metadata,
+      createdAt: now.toISOString(),
+    }, { status: 201 })
   } catch (error) {
     console.error('[v0] Error creating message:', error)
     return Response.json({ error: 'Internal server error' }, { status: 500 })

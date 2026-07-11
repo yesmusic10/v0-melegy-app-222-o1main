@@ -82,7 +82,7 @@ export const conversation = pgTable('conversation', {
   userId: text('userId').notNull(),
   title: text('title').notNull().default('New Conversation'),
   description: text('description'),
-  model: text('model').notNull().default('gpt-3.5-turbo'),
+  model: text('model').notNull().default('qwen-2.5-72b-instruct'),
   messageCount: integer('messageCount').notNull().default(0),
   isArchived: boolean('isArchived').notNull().default(false),
   createdAt: timestamp('createdAt').notNull().defaultNow(),

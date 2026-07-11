@@ -64,16 +64,25 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
     const script = document.createElement('script')
     script.src = 'https://js.puter.com/puter.js'
     script.async = true
+    
     script.onload = () => {
       console.log('[v0] Puter.js loaded successfully')
       if (window.puter) {
         puterRef.current = window.puter
       }
     }
+    
+    script.onerror = () => {
+      console.error('[v0] Failed to load Puter.js from CDN')
+      setIsLoading(false)
+    }
+    
     document.head.appendChild(script)
 
     return () => {
-      document.head.removeChild(script)
+      if (document.head.contains(script)) {
+        document.head.removeChild(script)
+      }
     }
   }, [])
 
@@ -81,7 +90,7 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
   useEffect(() => {
     const loadConversations = async () => {
       try {
-        const response = await fetch(`/api/conversations?userId=${userId}`)
+        const response = await fetch('/api/conversations')
         const data = await response.json()
         setConversations(data.conversations || [])
 
@@ -95,7 +104,7 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
     }
 
     loadConversations()
-  }, [userId, currentConversationId])
+  }, [userId])
 
   // Create new conversation
   const createNewConversation = async () => {
@@ -104,7 +113,6 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId,
           title: `Conversation - ${new Date().toLocaleDateString('ar-EG')}`,
           model: selectedModel,
         }),
@@ -134,7 +142,6 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId,
           title: inputValue.substring(0, 50),
           model: selectedModel,
         }),
@@ -146,7 +153,7 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
 
     // Add user message
     const userMessage: Message = {
-      id: `msg_${Date.now()}`,
+      id: crypto.randomUUID(),
       role: 'user',
       content: inputValue,
       createdAt: new Date(),
@@ -163,7 +170,6 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           conversationId: convId,
-          userId,
           role: 'user',
           content: userMessage.content,
         }),
@@ -182,7 +188,7 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
       ])
 
       const assistantMessage: Message = {
-        id: `msg_${Date.now() + 1}`,
+        id: crypto.randomUUID(),
         role: 'assistant',
         content: response,
         createdAt: new Date(),
@@ -196,7 +202,6 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           conversationId: convId,
-          userId,
           role: 'assistant',
           content: assistantMessage.content,
         }),
@@ -204,7 +209,7 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
     } catch (error) {
       console.error('[v0] Error calling Puter AI:', error)
       const errorMessage: Message = {
-        id: `msg_${Date.now() + 1}`,
+        id: crypto.randomUUID(),
         role: 'assistant',
         content: `عذراً، حدث خطأ: ${error instanceof Error ? error.message : 'Unknown error'}`,
         createdAt: new Date(),
@@ -218,7 +223,10 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
   // Delete conversation
   const deleteConversation = async (convId: string) => {
     try {
-      await fetch(`/api/conversations/${convId}`, { method: 'DELETE' })
+      const response = await fetch(`/api/conversations/${convId}`, { method: 'DELETE' })
+      if (!response.ok) {
+        throw new Error('Failed to delete conversation')
+      }
       setConversations(conversations.filter((c) => c.id !== convId))
       if (currentConversationId === convId) {
         setCurrentConversationId(null)
@@ -226,6 +234,7 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
       }
     } catch (error) {
       console.error('[v0] Error deleting conversation:', error)
+      alert('فشل حذف المحادثة. حاول مرة أخرى.')
     }
   }
 
