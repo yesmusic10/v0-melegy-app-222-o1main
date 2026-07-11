@@ -37,12 +37,12 @@ export async function POST(req: Request) {
       createdAt: now,
     })
 
-    // Update conversation's message count and updatedAt
+    // Update conversation's message count and updatedat
     await db
       .update(conversation)
       .set({
-        messageCount: conv[0].messageCount + 1,
-        updatedAt: now,
+        messagecount: conv[0].messagecount + 1,
+        updatedat: now,
       })
       .where(eq(conversation.id, conversationId))
 

@@ -52,10 +52,10 @@ export async function getOrCreateUserPreference() {
     const id = `pref_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     await db.insert(userPreference).values({
       id,
-      userId,
+      userid: userId,
       theme: 'light',
       language: 'en',
-      emailNotifications: true,
+      emailnotifications: true,
     })
     pref = await db
       .select()

@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { nanoid } from 'nanoid'
 
 // Simple in-memory token store (in production, use Redis or database)
-const tokenStore = new Map<string, { userId: string; expiresAt: number }>()
+const tokenStore = new Map<string, { userid: string; expiresAt: number }>()
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,17 +42,17 @@ export async function POST(request: NextRequest) {
     // Create session token
     const token = nanoid(32)
     const expiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000 // 30 days
-    tokenStore.set(token, { userId: user.id, expiresAt })
+    tokenStore.set(token, { userid: user.id, expiresAt })
 
     // Return response
     const response = NextResponse.json(
       {
         message: 'Verified successfully',
         token,
-        userId: user.id,
+        userid: user.id,
         name: user.name,
         phone: user.phone,
-        subscriptionPlan: user.subscriptionPlan,
+        subscriptionplan: user.subscriptionplan,
       },
       { status: 200 }
     )
@@ -90,5 +90,5 @@ export function validateToken(token: string): string | null {
     tokenStore.delete(token)
     return null
   }
-  return data.userId
+  return data.userid
 }

@@ -16,7 +16,7 @@ export async function GET(req: Request) {
       .select()
       .from(conversation)
       .where(eq(conversation.userid, userId))
-      .orderBy(desc(conversation.updatedAt))
+      .orderBy(desc(conversation.updatedat))
 
     // Fetch messages for each conversation
     const conversationsWithMessages = await Promise.all(
