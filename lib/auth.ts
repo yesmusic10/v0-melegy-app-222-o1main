@@ -15,12 +15,17 @@ const baseURL =
 
 const trustedOrigins = [
   baseURL,
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost',
+  'http://127.0.0.1:3000',
   ...(process.env.V0_RUNTIME_URL ? [process.env.V0_RUNTIME_URL] : []),
   ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
   ...(process.env.VERCEL_PROJECT_PRODUCTION_URL
     ? [`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`]
     : []),
-]
+].filter((origin) => origin && origin.trim() !== '')
+  .filter((value, index, self) => self.indexOf(value) === index) // Remove duplicates
 
 const authConfig: BetterAuthOptions = {
   database: drizzleAdapter(db, {
