@@ -36,7 +36,6 @@ export async function POST(req: Request) {
       system: EGYPTIAN_SYSTEM_PROMPT,
       messages,
       temperature: 0.7,
-      maxTokens: 1024,
     })
 
     console.log('[v0] Stream created successfully')

@@ -78,11 +78,16 @@ export async function getConversationMessages(conversationId: string) {
 
   if (!conv) throw new Error('Conversation not found')
 
-  return db
+  const messages = await db
     .select()
     .from(message)
     .where(eq(message.conversationId, conversationId))
     .orderBy(desc(message.createdAt))
+
+  return messages.map((msg) => ({
+    ...msg,
+    role: msg.role as 'user' | 'assistant',
+  }))
 }
 
 export async function addMessage(
