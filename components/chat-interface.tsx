@@ -1,0 +1,477 @@
+'use client'
+
+import { useEffect, useRef, useState } from 'react'
+import { Send, Menu, Plus, Settings, Moon, Sun, Trash2, Copy, Check } from 'lucide-react'
+import { formatDistanceToNow } from 'date-fns'
+import { ar } from 'date-fns/locale'
+import ReactMarkdown from 'react-markdown'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
+
+// Declare Puter global
+declare global {
+  interface Window {
+    puter?: any
+  }
+}
+
+interface Message {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  createdAt: Date
+}
+
+interface Conversation {
+  id: string
+  title: string
+  messages: Message[]
+}
+
+const QWEN_MODELS = [
+  { id: 'qwen-2.5-72b-instruct', name: 'Qwen 2.5 72B Instruct' },
+  { id: 'qwen-2.5-32b-instruct', name: 'Qwen 2.5 32B Instruct' },
+  { id: 'qwen-2.5-14b-instruct', name: 'Qwen 2.5 14B Instruct' },
+  { id: 'qwen-2.5-coder-32b-instruct', name: 'Qwen 2.5 Coder 32B' },
+  { id: 'qwen-2.5-7b-instruct', name: 'Qwen 2.5 7B Instruct' },
+]
+
+export default function ChatInterface({ userId, userName }: { userId: string; userName: string }) {
+  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [inputValue, setInputValue] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [selectedModel, setSelectedModel] = useState('qwen-2.5-72b-instruct')
+  const [isDark, setIsDark] = useState(false)
+  const [showSidebar, setShowSidebar] = useState(true)
+  const [showSettings, setShowSettings] = useState(false)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const puterRef = useRef<any>(null)
+
+  // Scroll to bottom
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+  // Initialize Puter.js
+  useEffect(() => {
+    const script = document.createElement('script')
+    script.src = 'https://js.puter.com/puter.js'
+    script.async = true
+    script.onload = () => {
+      console.log('[v0] Puter.js loaded successfully')
+      if (window.puter) {
+        puterRef.current = window.puter
+      }
+    }
+    document.head.appendChild(script)
+
+    return () => {
+      document.head.removeChild(script)
+    }
+  }, [])
+
+  // Load conversations from server
+  useEffect(() => {
+    const loadConversations = async () => {
+      try {
+        const response = await fetch(`/api/conversations?userId=${userId}`)
+        const data = await response.json()
+        setConversations(data.conversations || [])
+
+        if (data.conversations.length > 0 && !currentConversationId) {
+          setCurrentConversationId(data.conversations[0].id)
+          setMessages(data.conversations[0].messages || [])
+        }
+      } catch (error) {
+        console.error('[v0] Error loading conversations:', error)
+      }
+    }
+
+    loadConversations()
+  }, [userId, currentConversationId])
+
+  // Create new conversation
+  const createNewConversation = async () => {
+    try {
+      const response = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          title: `Conversation - ${new Date().toLocaleDateString('ar-EG')}`,
+          model: selectedModel,
+        }),
+      })
+
+      const data = await response.json()
+      const newConversation = { id: data.id, title: data.title, messages: [] }
+      setConversations([newConversation, ...conversations])
+      setCurrentConversationId(newConversation.id)
+      setMessages([])
+      setInputValue('')
+    } catch (error) {
+      console.error('[v0] Error creating conversation:', error)
+    }
+  }
+
+  // Send message to Puter AI
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!inputValue.trim() || !puterRef.current || !currentConversationId) return
+
+    // Create new conversation if needed
+    let convId = currentConversationId
+    if (messages.length === 0) {
+      const response = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          title: inputValue.substring(0, 50),
+          model: selectedModel,
+        }),
+      })
+      const data = await response.json()
+      convId = data.id
+      setCurrentConversationId(convId)
+    }
+
+    // Add user message
+    const userMessage: Message = {
+      id: `msg_${Date.now()}`,
+      role: 'user',
+      content: inputValue,
+      createdAt: new Date(),
+    }
+
+    setMessages((prev) => [...prev, userMessage])
+    setInputValue('')
+    setIsLoading(true)
+
+    try {
+      // Save user message to DB
+      await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId: convId,
+          userId,
+          role: 'user',
+          content: userMessage.content,
+        }),
+      })
+
+      // Get chat history for context
+      const chatHistory = messages.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      }))
+
+      // Call Puter AI
+      const response = await puterRef.current.ai.chat(selectedModel, [
+        ...chatHistory,
+        { role: 'user', content: userMessage.content },
+      ])
+
+      const assistantMessage: Message = {
+        id: `msg_${Date.now() + 1}`,
+        role: 'assistant',
+        content: response,
+        createdAt: new Date(),
+      }
+
+      setMessages((prev) => [...prev, assistantMessage])
+
+      // Save assistant message to DB
+      await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId: convId,
+          userId,
+          role: 'assistant',
+          content: assistantMessage.content,
+        }),
+      })
+    } catch (error) {
+      console.error('[v0] Error calling Puter AI:', error)
+      const errorMessage: Message = {
+        id: `msg_${Date.now() + 1}`,
+        role: 'assistant',
+        content: `عذراً، حدث خطأ: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        createdAt: new Date(),
+      }
+      setMessages((prev) => [...prev, errorMessage])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Delete conversation
+  const deleteConversation = async (convId: string) => {
+    try {
+      await fetch(`/api/conversations/${convId}`, { method: 'DELETE' })
+      setConversations(conversations.filter((c) => c.id !== convId))
+      if (currentConversationId === convId) {
+        setCurrentConversationId(null)
+        setMessages([])
+      }
+    } catch (error) {
+      console.error('[v0] Error deleting conversation:', error)
+    }
+  }
+
+  // Copy message to clipboard
+  const copyToClipboard = (text: string, id: string) => {
+    navigator.clipboard.writeText(text)
+    setCopiedId(id)
+    setTimeout(() => setCopiedId(null), 2000)
+  }
+
+  return (
+    <div className={`flex h-screen ${isDark ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
+      {/* Sidebar */}
+      <div
+        className={`${showSidebar ? 'w-64' : 'w-0'} ${isDark ? 'bg-gray-800' : 'bg-gray-50'} border-r ${isDark ? 'border-gray-700' : 'border-gray-200'} transition-all duration-300 overflow-hidden flex flex-col`}
+      >
+        {/* Sidebar Header */}
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <button
+            onClick={createNewConversation}
+            className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+              isDark
+                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                : 'bg-blue-500 hover:bg-blue-600 text-white'
+            }`}
+          >
+            <Plus className="w-4 h-4" />
+            <span>محادثة جديدة</span>
+          </button>
+        </div>
+
+        {/* Conversations List */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+          {conversations.map((conv) => (
+            <div
+              key={conv.id}
+              className={`group p-3 rounded-lg cursor-pointer transition-all ${
+                currentConversationId === conv.id
+                  ? isDark
+                    ? 'bg-blue-600'
+                    : 'bg-blue-100'
+                  : isDark
+                    ? 'hover:bg-gray-700'
+                    : 'hover:bg-gray-100'
+              }`}
+            >
+              <button
+                onClick={() => {
+                  setCurrentConversationId(conv.id)
+                  setMessages(conv.messages)
+                }}
+                className="w-full text-left truncate text-sm font-medium"
+              >
+                {conv.title}
+              </button>
+              <button
+                onClick={() => deleteConversation(conv.id)}
+                className={`opacity-0 group-hover:opacity-100 mt-1 text-xs transition-opacity ${isDark ? 'text-red-400 hover:text-red-300' : 'text-red-500 hover:text-red-600'}`}
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* User Info */}
+        <div className={`p-4 border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+          <div className="text-sm font-medium truncate">{userName}</div>
+        </div>
+      </div>
+
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <div className={`flex items-center justify-between p-4 border-b ${isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowSidebar(!showSidebar)}
+              className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            {/* Model Selector */}
+            <select
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+              className={`px-3 py-2 rounded-lg border transition-colors ${
+                isDark
+                  ? 'bg-gray-700 border-gray-600 text-white'
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
+            >
+              {QWEN_MODELS.map((model) => (
+                <option key={model.id} value={model.id}>
+                  {model.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsDark(!isDark)}
+              className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-700 text-yellow-400' : 'hover:bg-gray-100 text-gray-600'}`}
+            >
+              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {messages.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold mb-2">مرحباً في Melegy</h2>
+                <p className={`${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                  ابدأ محادثة جديدة باستخدام نماذج Qwen الذكية
+                </p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-xs lg:max-w-md xl:max-w-lg px-4 py-3 rounded-lg ${
+                      message.role === 'user'
+                        ? isDark
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-blue-500 text-white'
+                        : isDark
+                          ? 'bg-gray-700 text-gray-100'
+                          : 'bg-gray-100 text-gray-900'
+                    }`}
+                  >
+                    {message.role === 'assistant' ? (
+                      <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
+                        <ReactMarkdown
+                          components={{
+                            code: ({ className, children, ...props }: any) => {
+                              const match = /language-(\w+)/.exec(className || '')
+                              const isInline = !className
+                              return !isInline && match ? (
+                                <SyntaxHighlighter
+                                  style={atomDark}
+                                  language={match[1]}
+                                  PreTag="div"
+                                  {...props}
+                                >
+                                  {String(children).replace(/\n$/, '')}
+                                </SyntaxHighlighter>
+                              ) : (
+                                <code className={className} {...props}>
+                                  {children}
+                                </code>
+                              )
+                            },
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="whitespace-pre-wrap">{message.content}</p>
+                    )}
+
+                    <div
+                      className={`flex items-center justify-between mt-2 text-xs ${
+                        message.role === 'user' ? 'text-blue-100' : isDark ? 'text-gray-400' : 'text-gray-500'
+                      }`}
+                    >
+                      <span>{formatDistanceToNow(message.createdAt, { locale: ar })}</span>
+                      <button
+                        onClick={() => copyToClipboard(message.content, message.id)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity ml-2"
+                      >
+                        {copiedId === message.id ? (
+                          <Check className="w-3 h-3" />
+                        ) : (
+                          <Copy className="w-3 h-3" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className={`px-4 py-3 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                    <div className="flex gap-1">
+                      <div className="w-2 h-2 bg-current rounded-full animate-bounce" />
+                      <div className="w-2 h-2 bg-current rounded-full animate-bounce delay-100" />
+                      <div className="w-2 h-2 bg-current rounded-full animate-bounce delay-200" />
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </>
+          )}
+        </div>
+
+        {/* Input Area */}
+        <form
+          onSubmit={handleSendMessage}
+          className={`p-4 border-t ${isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}
+        >
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="اكتب رسالتك..."
+              disabled={isLoading}
+              className={`flex-1 px-4 py-3 rounded-lg border transition-colors disabled:opacity-50 ${
+                isDark
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500'
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500'
+              } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20`}
+            />
+            <button
+              type="submit"
+              disabled={isLoading || !inputValue.trim()}
+              className={`px-4 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                isDark
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                  : 'bg-blue-500 hover:bg-blue-600 text-white'
+              }`}
+            >
+              <Send className="w-5 h-5" />
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
