@@ -18,14 +18,14 @@ export async function getOrCreateSubscription() {
   let sub = await db
     .select()
     .from(subscription)
-    .where(eq(subscription.userId, userId))
+    .where(eq(subscription.userid, userId))
     .then((res) => res[0])
 
   if (!sub) {
     const id = `sub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     await db.insert(subscription).values({
       id,
-      userId,
+      userid: userId,
       plan: 'free',
       status: 'active',
     })
@@ -45,7 +45,7 @@ export async function getOrCreateUserPreference() {
   let pref = await db
     .select()
     .from(userPreference)
-    .where(eq(userPreference.userId, userId))
+    .where(eq(userPreference.userid, userId))
     .then((res) => res[0])
 
   if (!pref) {

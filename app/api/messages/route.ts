@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     const conv = await db
       .select()
       .from(conversation)
-      .where(and(eq(conversation.id, conversationId), eq(conversation.userId, userId)))
+      .where(and(eq(conversation.id, conversationId), eq(conversation.userid, userId)))
 
     if (conv.length === 0) {
       return Response.json({ error: 'Conversation not found' }, { status: 404 })

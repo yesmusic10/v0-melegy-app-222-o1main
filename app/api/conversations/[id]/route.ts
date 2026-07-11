@@ -16,7 +16,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     // Delete conversation only if it belongs to the user
     await db
       .delete(conversation)
-      .where(and(eq(conversation.id, id), eq(conversation.userId, userId)))
+      .where(and(eq(conversation.id, id), eq(conversation.userid, userId)))
 
     return Response.json({ success: true })
   } catch (error) {

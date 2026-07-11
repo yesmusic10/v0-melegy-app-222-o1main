@@ -76,7 +76,7 @@ export async function verifyOTP(phone: string, otp: string): Promise<boolean> {
     }
     
     // Check if expired
-    if (new Date() > record.expiresAt) {
+    if (new Date() > record.expiresat) {
       await db.delete(otpVerification).where(eq(otpVerification.id, record.id))
       return false
     }
@@ -102,7 +102,7 @@ export async function verifyOTP(phone: string, otp: string): Promise<boolean> {
     // Mark user as verified
     await db
       .update(userPhone)
-      .set({ isVerified: true })
+      .set({ isverified: true })
       .where(eq(userPhone.phone, phone))
     
     return true
@@ -137,9 +137,9 @@ export async function createUserFromPhone(
       id: userId,
       phone,
       name,
-      birthDate,
-      subscriptionPlan,
-      isVerified: false,
+      birthdate: birthDate,
+      subscriptionplan: subscriptionPlan,
+      isverified: false,
     })
     
     return userId
