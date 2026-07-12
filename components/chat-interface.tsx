@@ -90,7 +90,12 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
           credentials: 'include', // Include cookies in request
         })
         if (!response.ok) {
-          console.error('[v0] Failed to load conversations:', response.status)
+          if (response.status === 401) {
+            // User not authenticated yet - this is OK, they can create a new conversation
+            console.log('[v0] Not authenticated yet, will create conversation on first message')
+          } else {
+            console.error('[v0] Failed to load conversations:', response.status)
+          }
           return
         }
         const data = await response.json()
@@ -101,7 +106,8 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
           setMessages(data.conversations[0].messages || [])
         }
       } catch (error) {
-        console.error('[v0] Error loading conversations:', error)
+        // Silently catch errors - user can still use the app
+        console.log('[v0] Note: Could not load conversations, but app is still usable')
       }
     }
 
