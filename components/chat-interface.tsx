@@ -136,7 +136,12 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!inputValue.trim() || !puterRef.current || !currentConversationId) return
+    if (!inputValue.trim()) return
+    if (!currentConversationId) return
+    if (!puterRef.current) {
+      console.warn('[v0] Puter.js not loaded yet, waiting...')
+      return
+    }
 
     // Create new conversation if needed
     let convId = currentConversationId
