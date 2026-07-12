@@ -30,21 +30,12 @@ interface Conversation {
   messages: Message[]
 }
 
-const QWEN_MODELS = [
-  { id: 'qwen-2.5-72b-instruct', name: 'Qwen 2.5 72B Instruct' },
-  { id: 'qwen-2.5-32b-instruct', name: 'Qwen 2.5 32B Instruct' },
-  { id: 'qwen-2.5-14b-instruct', name: 'Qwen 2.5 14B Instruct' },
-  { id: 'qwen-2.5-coder-32b-instruct', name: 'Qwen 2.5 Coder 32B' },
-  { id: 'qwen-2.5-7b-instruct', name: 'Qwen 2.5 7B Instruct' },
-]
-
 export default function ChatInterface({ userId, userName }: { userId: string; userName: string }) {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [selectedModel, setSelectedModel] = useState('qwen-2.5-72b-instruct')
   const [isDark, setIsDark] = useState(false)
   const [showSidebar, setShowSidebar] = useState(true)
   const [showSettings, setShowSettings] = useState(false)
@@ -116,7 +107,7 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: `Conversation - ${new Date().toLocaleDateString('ar-EG')}`,
-          model: selectedModel,
+          model: 'qwen-2.5-32b-instruct', // Default model (will be auto-selected per message)
         }),
       })
 
@@ -145,7 +136,7 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: inputValue.substring(0, 50),
-          model: selectedModel,
+          model: 'qwen-2.5-32b-instruct', // Default model (will be auto-selected per message)
         }),
       })
       const data = await response.json()
@@ -192,8 +183,11 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
       // Build context-aware prompt with Egyptian personality
       const systemPrompt = ConversationMemoryService.buildContextAwarePrompt(userContext, userMessage.content)
 
-      // Call Puter AI
-      const response = await puterRef.current.ai.chat(selectedModel, [
+      // Auto-select best model based on message content (silent in background)
+      const bestModel = selectBestModel(userMessage.content)
+
+      // Call Puter AI with auto-selected model
+      const response = await puterRef.current.ai.chat(bestModel, [
         ...chatHistory,
         { role: 'user', content: userMessage.content },
       ])
@@ -257,6 +251,29 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
     navigator.clipboard.writeText(text)
     setCopiedId(id)
     setTimeout(() => setCopiedId(null), 2000)
+  }
+
+  // Auto-select best model based on message content (in background)
+  const selectBestModel = (messageContent: string): string => {
+    const lowerContent = messageContent.toLowerCase()
+    
+    // Code-related request - use Coder model
+    if (/code|programming|python|javascript|javascript|react|html|css|function|debug|refactor/i.test(lowerContent)) {
+      return 'qwen-2.5-coder-32b-instruct'
+    }
+    
+    // Simple/quick question - use smaller model for faster response
+    if (messageContent.split(' ').length <= 5) {
+      return 'qwen-2.5-7b-instruct'
+    }
+    
+    // Complex reasoning needed - use larger model
+    if (/explain|analyze|comprehensive|detailed|think|problem|solution|why|how/i.test(lowerContent)) {
+      return 'qwen-2.5-72b-instruct'
+    }
+    
+    // Default to mid-range model for balanced performance
+    return 'qwen-2.5-32b-instruct'
   }
 
   return (
@@ -332,22 +349,7 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
               <Menu className="w-5 h-5" />
             </button>
 
-            {/* Model Selector */}
-            <select
-              value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
-              className={`px-3 py-2 rounded-lg border transition-colors ${
-                isDark
-                  ? 'bg-gray-700 border-gray-600 text-white'
-                  : 'bg-white border-gray-300 text-gray-900'
-              }`}
-            >
-              {QWEN_MODELS.map((model) => (
-                <option key={model.id} value={model.id}>
-                  {model.name}
-                </option>
-              ))}
-            </select>
+
           </div>
 
           <div className="flex items-center gap-2">
@@ -371,9 +373,9 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
-                <h2 className="text-2xl font-bold mb-2">مرحباً في Melegy</h2>
+                <h2 className="text-2xl font-bold mb-2">مرحباً في ميليجي</h2>
                 <p className={`${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                  ابدأ محادثة جديدة باستخدام نماذج Qwen الذكية
+                  ابدأ محادثة جديدة مع مساعدك الذكي
                 </p>
               </div>
             </div>
