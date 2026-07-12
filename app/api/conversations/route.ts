@@ -16,7 +16,7 @@ export async function GET(req: Request) {
       .select()
       .from(conversation)
       .where(eq(conversation.userid, userId))
-      .orderBy(desc(conversation.updatedAt))
+      .orderBy(desc(conversation.updatedat))
 
     // Fetch messages for each conversation
     const conversationsWithMessages = await Promise.all(
@@ -58,21 +58,21 @@ export async function POST(req: Request) {
 
     await db.insert(conversation).values({
       id,
-      userId,
+      userid: userId,
       title: title?.trim() || 'New Conversation',
       model: selectedModel,
       description: description?.trim(),
-      createdAt: now,
-      updatedAt: now,
+      createdat: now,
+      updatedat: now,
     })
 
     return Response.json({
       id,
-      userId,
+      userid: userId,
       title: title?.trim() || 'New Conversation',
       model: selectedModel,
       description: description?.trim(),
-      messageCount: 0,
+      messagecount: 0,
       isArchived: false,
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),

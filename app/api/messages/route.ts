@@ -29,20 +29,20 @@ export async function POST(req: Request) {
     
     await db.insert(message).values({
       id,
-      conversationId,
-      userId,
+      conversationid: conversationId,
+      userid: userId,
       role: role || 'user',
       content,
       metadata,
-      createdAt: now,
+      createdat: now,
     })
 
-    // Update conversation's message count and updatedAt
+    // Update conversation's message count and updatedat
     await db
       .update(conversation)
       .set({
-        messageCount: conv[0].messageCount + 1,
-        updatedAt: now,
+        messagecount: conv[0].messagecount + 1,
+        updatedat: now,
       })
       .where(eq(conversation.id, conversationId))
 
