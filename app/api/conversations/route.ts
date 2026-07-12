@@ -68,11 +68,11 @@ export async function POST(req: Request) {
 
     return Response.json({
       id,
-      userId,
+      userid: userId,
       title: title?.trim() || 'New Conversation',
       model: selectedModel,
       description: description?.trim(),
-      messageCount: 0,
+      messagecount: 0,
       isArchived: false,
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),

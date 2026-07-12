@@ -72,9 +72,10 @@ export async function POST(request: NextRequest) {
 
       return response
     } catch (dbError) {
-      console.error('[API] Database error:', dbError)
+      console.error('[v0] Database error:', dbError)
+      console.error('[v0] Error details:', JSON.stringify(dbError))
       return NextResponse.json(
-        { message: 'Failed to login' },
+        { message: 'Failed to login', error: String(dbError) },
         { status: 500 }
       )
     }
