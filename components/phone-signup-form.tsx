@@ -44,6 +44,7 @@ export function PhoneSignupForm({ onSuccess }: SignupFormProps) {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Allow cookie to be stored
         body: JSON.stringify({
           name: name.trim(),
           birthDate,
