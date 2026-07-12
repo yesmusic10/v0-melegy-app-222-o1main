@@ -141,11 +141,8 @@ export default function DataPage() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch("/api/analytics")
-      if (res.ok) {
-        setData(await res.json())
-        setLastRefresh(new Date())
-      }
+      // Analytics endpoint not implemented - show error state
+      setLoading(false)
     } catch { /* silent */ } finally {
       setLoading(false)
     }

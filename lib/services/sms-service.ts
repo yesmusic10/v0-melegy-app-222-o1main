@@ -39,14 +39,14 @@ export async function createAndSendOTP(phone: string): Promise<string | null> {
     await db.delete(otpVerification).where(eq(otpVerification.phone, phone))
     
     const otp = generateOTP()
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+    const expiresat = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
     
     const id = nanoid()
     await db.insert(otpVerification).values({
       id,
       phone,
       otp,
-      expiresAt,
+      expiresat,
     })
     
     const sent = await sendOTPToPhone(phone, otp)
