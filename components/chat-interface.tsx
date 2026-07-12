@@ -221,7 +221,8 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
       }))
 
       // Load user context and conversation memory
-      const userContext = await ConversationMemoryService.loadUserContext(userId || 'anonymous', convId, chatHistory)
+      const safeUserId = (userId || 'anonymous') as string
+      const userContext = await ConversationMemoryService.loadUserContext(safeUserId, convId, chatHistory)
       
       // Extract facts to remember for future
       const facts = ConversationMemoryService.extractFactsToRemember(userMessage.content)

@@ -1,62 +1,70 @@
-import { db } from '@/lib/db'
-import { message, conversation } from '@/lib/db/schema'
-import { eq, and } from 'drizzle-orm'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
 import { nanoid } from 'nanoid'
 
 export async function POST(req: Request) {
   try {
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('userId')?.value
-    if (!userId) {
+    const supabase = await createClient()
+    
+    // Get current user from Supabase auth
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user?.id) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const userId = user.id
     const { conversationId, content, role, metadata } = await req.json()
     const id = nanoid()
 
     // Verify conversation belongs to user
-    const conv = await db
+    const { data: conv, error: convError } = await supabase
+      .from('conversation')
       .select()
-      .from(conversation)
-      .where(and(eq(conversation.id, conversationId), eq(conversation.userid, userId)))
+      .eq('id', conversationId)
+      .eq('userid', userId)
+      .single()
 
-    if (conv.length === 0) {
+    if (convError || !conv) {
       return Response.json({ error: 'Conversation not found' }, { status: 404 })
     }
 
     const now = new Date()
     
-    await db.insert(message).values({
-      id,
-      conversationid: conversationId,
-      userid: userId,
-      role: role || 'user',
-      content,
-      metadata,
-      createdat: now,
-    })
+    // Insert message
+    const { data: message, error: msgError } = await supabase
+      .from('message')
+      .insert({
+        id,
+        conversationid: conversationId,
+        userid: userId,
+        role: role || 'user',
+        content,
+        metadata,
+        createdat: now,
+      })
+      .select()
+      .single()
+
+    if (msgError) {
+      console.error('[v0] Error creating message:', msgError)
+      return Response.json({ error: 'Failed to create message' }, { status: 500 })
+    }
 
     // Update conversation's message count and updatedat
-    await db
-      .update(conversation)
-      .set({
-        messagecount: conv[0].messagecount + 1,
+    const { error: updateError } = await supabase
+      .from('conversation')
+      .update({
+        messagecount: (conv.messagecount || 0) + 1,
         updatedat: now,
       })
-      .where(eq(conversation.id, conversationId))
+      .eq('id', conversationId)
 
-    return Response.json({
-      id,
-      conversationId,
-      userId,
-      role: role || 'user',
-      content,
-      metadata,
-      createdAt: now.toISOString(),
-    }, { status: 201 })
+    if (updateError) {
+      console.error('[v0] Error updating conversation:', updateError)
+    }
+
+    return Response.json(message, { status: 201 })
   } catch (error) {
-    console.error('[v0] Error creating message:', error)
+    console.error('[v0] Error in POST messages:', error)
     return Response.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
