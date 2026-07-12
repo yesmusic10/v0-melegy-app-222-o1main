@@ -56,10 +56,10 @@ export function PhoneSignupForm({ onSuccess }: SignupFormProps) {
         throw new Error(data.message || 'فشل التسجيل')
       }
 
-      // Set userId cookie
-      if (data.userId) {
-        document.cookie = `userId=${data.userId}; path=/; max-age=${30 * 24 * 60 * 60}`
-      }
+      // Save all data to localStorage
+      localStorage.setItem('userId', data.userId)
+      localStorage.setItem('userName', data.name)
+      localStorage.setItem('subscriptionPlan', data.plan || 'free')
 
       setSuccess('تم التسجيل بنجاح!')
       

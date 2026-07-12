@@ -29,12 +29,12 @@ export async function POST(req: Request) {
     
     await db.insert(message).values({
       id,
-      conversationId,
-      userId,
+      conversationid: conversationId,
+      userid: userId,
       role: role || 'user',
       content,
       metadata,
-      createdAt: now,
+      createdat: now,
     })
 
     // Update conversation's message count and updatedat
