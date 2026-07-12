@@ -40,8 +40,11 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
   const [showSidebar, setShowSidebar] = useState(true)
   const [showSettings, setShowSettings] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [showActionMenu, setShowActionMenu] = useState(false)
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const puterRef = useRef<any>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Scroll to bottom
   const scrollToBottom = () => {
@@ -251,6 +254,42 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
     navigator.clipboard.writeText(text)
     setCopiedId(id)
     setTimeout(() => setCopiedId(null), 2000)
+  }
+
+  // Handle file upload
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      setUploadedFile(file)
+      // Auto-add file info to input
+      setInputValue(`[File: ${file.name}] `)
+    }
+  }
+
+  // Handle action menu selections
+  const handleActionSelect = (action: string) => {
+    switch (action) {
+      case 'image':
+        setInputValue('أنشئ صورة: ')
+        break
+      case 'video':
+        setInputValue('أنشئ فيديو: ')
+        break
+      case 'analyze':
+        if (uploadedFile) {
+          setInputValue(`حلل ملف ${uploadedFile.name}: `)
+        } else {
+          setInputValue('حلل الملف: ')
+        }
+        break
+      case 'code':
+        setInputValue('اكتب كود: ')
+        break
+      case 'document':
+        setInputValue('أنشئ مستند: ')
+        break
+    }
+    setShowActionMenu(false)
   }
 
   // Auto-select best model based on message content (in background)
@@ -470,7 +509,104 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
           onSubmit={handleSendMessage}
           className={`p-4 border-t ${isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}
         >
-          <div className="flex gap-3">
+          {/* File upload indicator */}
+          {uploadedFile && (
+            <div className={`mb-3 p-2 rounded-lg flex items-center justify-between ${
+              isDark ? 'bg-gray-700' : 'bg-gray-100'
+            }`}>
+              <span className="text-sm">{uploadedFile.name}</span>
+              <button
+                type="button"
+                onClick={() => setUploadedFile(null)}
+                className="text-xs text-red-500 hover:text-red-700"
+              >
+                إزالة
+              </button>
+            </div>
+          )}
+          
+          <div className="flex gap-2">
+            {/* Action Menu Button */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowActionMenu(!showActionMenu)}
+                className={`px-3 py-3 rounded-lg transition-colors ${
+                  isDark
+                    ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                    : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+                }`}
+                title="خيارات متقدمة"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+              
+              {/* Action Menu Dropdown */}
+              {showActionMenu && (
+                <div className={`absolute bottom-full left-0 mb-2 rounded-lg shadow-lg z-50 w-48 ${
+                  isDark ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-gray-300'
+                }`}>
+                  <button
+                    type="button"
+                    onClick={() => handleActionSelect('image')}
+                    className={`w-full text-right px-4 py-2 hover:${isDark ? 'bg-gray-600' : 'bg-gray-100'} transition-colors`}
+                  >
+                    صورة 🖼️
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleActionSelect('video')}
+                    className={`w-full text-right px-4 py-2 hover:${isDark ? 'bg-gray-600' : 'bg-gray-100'} transition-colors`}
+                  >
+                    فيديو 🎬
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleActionSelect('code')}
+                    className={`w-full text-right px-4 py-2 hover:${isDark ? 'bg-gray-600' : 'bg-gray-100'} transition-colors`}
+                  >
+                    كود 💻
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleActionSelect('document')}
+                    className={`w-full text-right px-4 py-2 hover:${isDark ? 'bg-gray-600' : 'bg-gray-100'} transition-colors`}
+                  >
+                    مستند 📄
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleActionSelect('analyze')}
+                    className={`w-full text-right px-4 py-2 hover:${isDark ? 'bg-gray-600' : 'bg-gray-100'} transition-colors border-t ${isDark ? 'border-gray-600' : 'border-gray-200'}`}
+                  >
+                    حلل ملف 📊
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* File Upload Button */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className={`px-3 py-3 rounded-lg transition-colors ${
+                isDark
+                  ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                  : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+              }`}
+              title="رفع ملف"
+            >
+              📎
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleFileSelect}
+              className="hidden"
+              accept="*"
+            />
+
+            {/* Chat Input */}
             <input
               type="text"
               value={inputValue}
@@ -483,6 +619,8 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
                   : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500'
               } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20`}
             />
+            
+            {/* Send Button */}
             <button
               type="submit"
               disabled={isLoading || !inputValue.trim()}
