@@ -86,7 +86,13 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
   useEffect(() => {
     const loadConversations = async () => {
       try {
-        const response = await fetch('/api/conversations')
+        const response = await fetch('/api/conversations', {
+          credentials: 'include', // Include cookies in request
+        })
+        if (!response.ok) {
+          console.error('[v0] Failed to load conversations:', response.status)
+          return
+        }
         const data = await response.json()
         setConversations(data.conversations || [])
 
@@ -108,6 +114,7 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
       const response = await fetch('/api/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Include cookies
         body: JSON.stringify({
           title: `Conversation - ${new Date().toLocaleDateString('ar-EG')}`,
           model: 'qwen-2.5-32b-instruct', // Default model (will be auto-selected per message)
@@ -137,6 +144,7 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
       const response = await fetch('/api/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Include cookies
         body: JSON.stringify({
           title: inputValue.substring(0, 50),
           model: 'qwen-2.5-32b-instruct', // Default model (will be auto-selected per message)
@@ -164,6 +172,7 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
       await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Include cookies
         body: JSON.stringify({
           conversationId: convId,
           role: 'user',
@@ -211,6 +220,7 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
       await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Include cookies
         body: JSON.stringify({
           conversationId: convId,
           role: 'assistant',
@@ -234,7 +244,10 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
   // Delete conversation
   const deleteConversation = async (convId: string) => {
     try {
-      const response = await fetch(`/api/conversations/${convId}`, { method: 'DELETE' })
+      const response = await fetch(`/api/conversations/${convId}`, { 
+        method: 'DELETE',
+        credentials: 'include', // Include cookies
+      })
       if (!response.ok) {
         throw new Error('Failed to delete conversation')
       }
