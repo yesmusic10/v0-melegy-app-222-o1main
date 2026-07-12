@@ -82,7 +82,7 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
     }
   }, [])
 
-  // Load conversations from server
+  // Load conversations from server and create one if needed
   useEffect(() => {
     const loadConversations = async () => {
       try {
@@ -91,8 +91,9 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
         })
         if (!response.ok) {
           if (response.status === 401) {
-            // User not authenticated yet - this is OK, they can create a new conversation
-            console.log('[v0] Not authenticated yet, will create conversation on first message')
+            console.log('[v0] Not authenticated, creating default conversation')
+            // Create a default conversation if not authenticated
+            await createNewConversation()
           } else {
             console.error('[v0] Failed to load conversations:', response.status)
           }
@@ -104,14 +105,19 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
         if (data.conversations.length > 0 && !currentConversationId) {
           setCurrentConversationId(data.conversations[0].id)
           setMessages(data.conversations[0].messages || [])
+        } else if (data.conversations.length === 0 && !currentConversationId) {
+          // No conversations exist, create a default one
+          await createNewConversation()
         }
       } catch (error) {
-        // Silently catch errors - user can still use the app
-        console.log('[v0] Note: Could not load conversations, but app is still usable')
+        console.log('[v0] Could not load conversations, creating new one')
+        await createNewConversation()
       }
     }
 
-    loadConversations()
+    if (userId) {
+      loadConversations()
+    }
   }, [userId])
 
   // Create new conversation
@@ -143,27 +149,44 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
     e.preventDefault()
 
     if (!inputValue.trim()) return
-    if (!currentConversationId) return
+    if (isLoading) return
+    
+    // Wait for Puter.js to load if needed
     if (!puterRef.current) {
-      console.warn('[v0] Puter.js not loaded yet, waiting...')
+      console.warn('[v0] Puter.js loading, please wait...')
+      // Try again after a short delay
+      setTimeout(() => {
+        const event = new Event('submit')
+        e.currentTarget?.dispatchEvent(event)
+      }, 500)
       return
     }
 
-    // Create new conversation if needed
+    // Ensure we have a conversation ID
     let convId = currentConversationId
-    if (messages.length === 0) {
-      const response = await fetch('/api/conversations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // Include cookies
-        body: JSON.stringify({
-          title: inputValue.substring(0, 50),
-          model: 'qwen-2.5-32b-instruct', // Default model (will be auto-selected per message)
-        }),
-      })
-      const data = await response.json()
-      convId = data.id
-      setCurrentConversationId(convId)
+    if (!convId) {
+      console.log('[v0] Creating new conversation...')
+      try {
+        const response = await fetch('/api/conversations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            title: inputValue.substring(0, 50),
+            model: 'qwen-2.5-32b-instruct',
+          }),
+        })
+        if (!response.ok) {
+          console.error('[v0] Failed to create conversation:', response.status)
+          return
+        }
+        const data = await response.json()
+        convId = data.id
+        setCurrentConversationId(convId)
+      } catch (error) {
+        console.error('[v0] Error creating conversation:', error)
+        return
+      }
     }
 
     // Add user message
@@ -198,7 +221,7 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
       }))
 
       // Load user context and conversation memory
-      const userContext = await ConversationMemoryService.loadUserContext(userId, convId, chatHistory)
+      const userContext = await ConversationMemoryService.loadUserContext(userId || 'anonymous', convId, chatHistory)
       
       // Extract facts to remember for future
       const facts = ConversationMemoryService.extractFactsToRemember(userMessage.content)
