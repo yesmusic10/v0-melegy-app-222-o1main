@@ -14,12 +14,7 @@ export function Hero() {
   const [showAppleGuide, setShowAppleGuide] = useState(false)
 
   const handleStartChat = () => {
-    const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null
-    if (userId) {
-      router.push("/chat")
-    } else {
-      router.push("/auth/sign-up")
-    }
+    router.push("/chat")
   }
 
   useEffect(() => {
