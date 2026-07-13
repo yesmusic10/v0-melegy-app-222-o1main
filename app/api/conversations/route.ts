@@ -6,11 +6,8 @@ import { nanoid } from 'nanoid'
 
 export async function GET(req: Request) {
   try {
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('userId')?.value
-    if (!userId) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const url = new URL(req.url)
+    const userId = url.searchParams.get('userId') || 'anonymous'
 
     const conversations = await db
       .select()
@@ -35,23 +32,10 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('userId')?.value
-    if (!userId) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const url = new URL(req.url)
+    const userId = url.searchParams.get('userId') || 'anonymous'
 
-    const { title, model, description } = await req.json()
-    
-    // Validate model
-    const validModels = [
-      'qwen-2.5-72b-instruct',
-      'qwen-2.5-32b-instruct',
-      'qwen-2.5-14b-instruct',
-      'qwen-2.5-coder-32b-instruct',
-      'qwen-2.5-7b-instruct',
-    ]
-    const selectedModel = validModels.includes(model) ? model : 'qwen-2.5-72b-instruct'
+    const { title, description } = await req.json()
     
     const id = nanoid()
     const now = new Date()
@@ -60,7 +44,7 @@ export async function POST(req: Request) {
       id,
       userid: userId,
       title: title?.trim() || 'New Conversation',
-      model: selectedModel,
+      model: 'gemini-3.5-flash',
       description: description?.trim(),
       createdat: now,
       updatedat: now,
@@ -70,7 +54,7 @@ export async function POST(req: Request) {
       id,
       userid: userId,
       title: title?.trim() || 'New Conversation',
-      model: selectedModel,
+      model: 'gemini-3.5-flash',
       description: description?.trim(),
       messagecount: 0,
       isArchived: false,

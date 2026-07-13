@@ -9,6 +9,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@ai-sdk/google": "^4.0.12",
     "@ai-sdk/react": "^3.0.0",
     "@aws-sdk/rds-signer": "^3.1063.0",
     "@fal-ai/client": "1.7.2",
