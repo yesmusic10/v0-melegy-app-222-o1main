@@ -26,10 +26,11 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState<string | null>(null)
   const [newTitle, setNewTitle] = useState('')
+  const [inputValue, setInputValue] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
-  const { messages, input = '', setInput = () => {}, append, isLoading } = useChat({
+  const { messages, append, isLoading } = useChat({
     api: '/api/chat',
     id: currentConversationId || undefined,
   }) as any
@@ -78,7 +79,7 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
         const newConversation = { id: data.id, title: data.title, messages: [] }
         setConversations([newConversation, ...conversations])
         setCurrentConversationId(newConversation.id)
-        setInput('')
+        setInputValue('')
       }
     } catch (error) {
       console.error('[v0] Failed to create conversation:', error)
@@ -118,7 +119,7 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim() || isLoading) return
+    if (!inputValue.trim() || isLoading) return
 
     if (!currentConversationId) {
       createNewConversation().then(() => {
@@ -127,13 +128,13 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
       return
     }
 
-    append({ role: 'user', content: input })
-    setInput('')
+    append({ role: 'user', content: inputValue })
+    setInputValue('')
   }
 
   // Handle textarea auto-expand
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value)
+    setInputValue(e.target.value)
     e.target.style.height = 'auto'
     e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px'
   }
@@ -354,7 +355,7 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
             <div className="flex gap-3">
               <textarea
                 ref={inputRef}
-                value={input}
+                value={inputValue}
                 onChange={handleInputChange}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -369,7 +370,7 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
               />
               <button
                 type="submit"
-                disabled={isLoading || !input.trim()}
+                disabled={isLoading || !inputValue.trim()}
                 className="px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-xl transition-colors flex items-center justify-center"
               >
                 {isLoading ? (
