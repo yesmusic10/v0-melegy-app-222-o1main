@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useChat } from '@ai-sdk/react'
 import {
   Send,
   Menu,
@@ -27,13 +26,10 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
   const [editingTitle, setEditingTitle] = useState<string | null>(null)
   const [newTitle, setNewTitle] = useState('')
   const [inputValue, setInputValue] = useState('')
+  const [messages, setMessages] = useState<Array<{ role: string; content: string }>>([])
+  const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
-
-  const { messages, append, isLoading } = useChat({
-    api: '/api/chat',
-    id: currentConversationId || undefined,
-  }) as any
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -78,12 +74,13 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
         const data = await response.json()
         const newConversation = { id: data.id, title: data.title, messages: [] }
         setConversations([newConversation, ...conversations])
-        setCurrentConversationId(newConversation.id)
-        setInputValue('')
+        setCurrentConversationId(data.id)
+        return data.id
       }
     } catch (error) {
-      console.error('[v0] Failed to create conversation:', error)
+      console.error('[v0] Error creating conversation:', error)
     }
+    return null
   }
 
   // Delete conversation
@@ -117,19 +114,69 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
     }
   }
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!inputValue.trim() || isLoading) return
 
-    if (!currentConversationId) {
-      createNewConversation().then(() => {
-        // Message will be sent after conversation is created
-      })
-      return
+    let convId = currentConversationId
+    if (!convId) {
+      convId = await createNewConversation()
+      if (!convId) return
     }
 
-    append({ role: 'user', content: inputValue })
+    const userMessage = { role: 'user', content: inputValue }
+    const newMessages = [...messages, userMessage]
+    setMessages(newMessages)
     setInputValue('')
+    setIsLoading(true)
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: newMessages }),
+      })
+
+      if (!response.ok) throw new Error('Failed to send message')
+
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+      let assistantMessage = ''
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          const chunk = decoder.decode(value)
+          const lines = chunk.split('\n')
+
+          for (const line of lines) {
+            if (line.startsWith('0:"')) {
+              const text = line.slice(3, -1)
+              assistantMessage += text
+              setMessages((prev) => {
+                const updated = [...prev]
+                if (updated[updated.length - 1]?.role === 'assistant') {
+                  updated[updated.length - 1].content = assistantMessage
+                } else {
+                  updated.push({ role: 'assistant', content: assistantMessage })
+                }
+                return updated
+              })
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[v0] Error sending message:', error)
+      setMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: 'حدث خطأ في الاتصال. حاول مرة أخرى.' },
+      ])
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Handle textarea auto-expand
@@ -360,7 +407,9 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                     e.preventDefault()
-                    handleSendMessage(e as any)
+                    const fakeEvent = new Event('submit') as any
+                    fakeEvent.preventDefault = () => {}
+                    handleSendMessage(fakeEvent)
                   }
                 }}
                 placeholder="اكتب رسالتك هنا... (Shift+Enter للسطر الجديد)"
@@ -369,7 +418,8 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
                 style={{ minHeight: '52px' }}
               />
               <button
-                type="submit"
+                type="button"
+                onClick={() => handleSendMessage({ preventDefault: () => {} } as any)}
                 disabled={isLoading || !inputValue.trim()}
                 className="px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-xl transition-colors flex items-center justify-center"
               >
