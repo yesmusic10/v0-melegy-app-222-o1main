@@ -118,12 +118,6 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
     e.preventDefault()
     if (!inputValue.trim() || isLoading) return
 
-    let convId = currentConversationId
-    if (!convId) {
-      convId = await createNewConversation()
-      if (!convId) return
-    }
-
     const userMessage = { role: 'user', content: inputValue }
     const newMessages = [...messages, userMessage]
     setMessages(newMessages)
@@ -139,33 +133,35 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
 
       if (!response.ok) throw new Error('Failed to send message')
 
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}`)
+      }
+
       const reader = response.body?.getReader()
       const decoder = new TextDecoder()
       let assistantMessage = ''
 
       if (reader) {
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
+        try {
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
 
-          const chunk = decoder.decode(value)
-          const lines = chunk.split('\n')
+            const chunk = decoder.decode(value, { stream: true })
+            assistantMessage += chunk
 
-          for (const line of lines) {
-            if (line.startsWith('0:"')) {
-              const text = line.slice(3, -1)
-              assistantMessage += text
-              setMessages((prev) => {
-                const updated = [...prev]
-                if (updated[updated.length - 1]?.role === 'assistant') {
-                  updated[updated.length - 1].content = assistantMessage
-                } else {
-                  updated.push({ role: 'assistant', content: assistantMessage })
-                }
-                return updated
-              })
-            }
+            setMessages((prev) => {
+              const updated = [...prev]
+              if (updated[updated.length - 1]?.role === 'assistant') {
+                updated[updated.length - 1].content = assistantMessage
+              } else {
+                updated.push({ role: 'assistant', content: assistantMessage })
+              }
+              return updated
+            })
           }
+        } finally {
+          reader.releaseLock()
         }
       }
     } catch (error) {

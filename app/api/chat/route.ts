@@ -1,20 +1,28 @@
 import { streamText } from 'ai'
 
 export async function POST(req: Request) {
-  const { messages } = await req.json()
+  try {
+    const { messages } = await req.json()
 
-  const result = streamText({
-    model: 'google/gemini-3.5-flash',
-    system: `أنت مساعد ذكي متخصص في اللغة العربية. 
+    const result = streamText({
+      model: 'google/gemini-3.5-flash',
+      system: `أنت مساعد ذكي متخصص في اللغة العربية. 
 تجيب بشكل مفيد واحترافي وودود.
 استخدم صيغة محترفة وسهلة الفهم.
 إذا طُلب منك كتابة كود، قدمه بصيغة markdown مع تحديد اللغة.
 تحافظ على السياق وتعتمد على رسائل سابقة إن وجدت.`,
-    messages: messages.map((msg: any) => ({
-      role: msg.role,
-      content: msg.content,
-    })),
-  })
+      messages: messages.map((msg: any) => ({
+        role: msg.role,
+        content: msg.content,
+      })),
+    })
 
-  return result.toDataStreamResponse()
+    return result.toTextStreamResponse()
+  } catch (error) {
+    console.error('[v0] Error in chat API:', error)
+    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
 }
