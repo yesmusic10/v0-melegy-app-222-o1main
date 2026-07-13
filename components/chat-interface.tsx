@@ -9,25 +9,14 @@ import {
   Trash2,
   Copy,
   Check,
-  ChevronDown,
-  MoreVertical,
-  Paperclip,
-  Smile,
-  X,
-  FileText,
-  Image as ImageIcon,
   Loader,
+  Smile,
 } from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
-import { ar } from 'date-fns/locale'
-import ReactMarkdown from 'react-markdown'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 interface Conversation {
   id: string
   title: string
-  messages: Array<{ id: string; role: 'user' | 'assistant'; content: string }>
+  messages: Array<{ role: 'user' | 'assistant'; content: string }>
 }
 
 export default function ChatInterface({ userId, userName }: { userId: string; userName: string }) {
@@ -40,19 +29,10 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
-  const { messages, input, setInput, append, isLoading, reload } = useChat({
+  const { messages, input = '', setInput = () => {}, append, isLoading } = useChat({
     api: '/api/chat',
     id: currentConversationId || undefined,
-    onFinish: async (message) => {
-      if (currentConversationId && messages.length > 0) {
-        await fetch(`/api/conversations/${currentConversationId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: [...messages, message] }),
-        })
-      }
-    },
-  })
+  }) as any
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -328,75 +308,19 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
                     {message.role === 'user' ? 'أنت' : 'M'}
                   </div>
 
-                  {/* Message Content */}
-                  <div
-                    className={`flex-1 group relative ${
-                      message.role === 'user' ? 'flex flex-row-reverse' : ''
-                    }`}
-                  >
+                  <div className="flex-1 group relative">
                     <div
-                      className={`px-4 py-3 rounded-lg max-w-2xl ${
+                      className={`px-4 py-3 rounded-lg max-w-2xl whitespace-pre-wrap ${
                         message.role === 'user'
                           ? 'bg-blue-600 text-white rounded-br-none'
                           : 'bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white rounded-bl-none'
                       }`}
                     >
-                      {message.role === 'assistant' ? (
-                        <ReactMarkdown
-                          components={{
-                            code: ({ node, inline, className, children, ...props }) => {
-                              const match = /language-(\w+)/.exec(className || '')
-                              return !inline && match ? (
-                                <SyntaxHighlighter
-                                  {...props}
-                                  style={atomDark}
-                                  language={match[1]}
-                                  PreTag="div"
-                                >
-                                  {String(children).replace(/\n$/, '')}
-                                </SyntaxHighlighter>
-                              ) : (
-                                <code
-                                  {...props}
-                                  className="bg-zinc-700 px-1.5 py-0.5 rounded text-sm font-mono"
-                                >
-                                  {children}
-                                </code>
-                              )
-                            },
-                            a: ({ children, href }) => (
-                              <a
-                                href={href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 dark:text-blue-400 hover:underline"
-                              >
-                                {children}
-                              </a>
-                            ),
-                            p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                            ul: ({ children }) => (
-                              <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>
-                            ),
-                            ol: ({ children }) => (
-                              <ol className="list-decimal list-inside mb-2 space-y-1">
-                                {children}
-                              </ol>
-                            ),
-                          }}
-                        >
-                          {message.content}
-                        </ReactMarkdown>
-                      ) : (
-                        message.content
-                      )}
+                      {message.content}
                     </div>
-
-                    {/* Message Actions */}
                     <button
                       onClick={() => copyToClipboard(message.content, index.toString())}
                       className="opacity-0 group-hover:opacity-100 p-2 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded transition-all ml-2"
-                      title="نسخ الرسالة"
                     >
                       {copiedId === index.toString() ? (
                         <Check className="w-4 h-4 text-green-500" />
@@ -425,7 +349,6 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
           )}
         </div>
 
-        {/* Input Area */}
         <div className="px-6 py-6 border-t border-gray-200 dark:border-zinc-800">
           <form onSubmit={handleSendMessage} className="space-y-4">
             <div className="flex gap-3">
