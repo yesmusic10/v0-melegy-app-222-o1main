@@ -2,7 +2,22 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useChat } from '@ai-sdk/react'
-import { Send, Menu, Plus, Settings, Moon, Sun, Trash2, Copy, Check, ArrowUp } from 'lucide-react'
+import {
+  Send,
+  Menu,
+  Plus,
+  Trash2,
+  Copy,
+  Check,
+  ChevronDown,
+  MoreVertical,
+  Paperclip,
+  Smile,
+  X,
+  FileText,
+  Image as ImageIcon,
+  Loader,
+} from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ar } from 'date-fns/locale'
 import ReactMarkdown from 'react-markdown'
@@ -18,9 +33,10 @@ interface Conversation {
 export default function ChatInterface({ userId, userName }: { userId: string; userName: string }) {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
-  const [isDark, setIsDark] = useState(true)
   const [showSidebar, setShowSidebar] = useState(true)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [editingTitle, setEditingTitle] = useState<string | null>(null)
+  const [newTitle, setNewTitle] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -29,19 +45,15 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
     id: currentConversationId || undefined,
     onFinish: async (message) => {
       if (currentConversationId && messages.length > 0) {
-        // Save conversation after response
         await fetch(`/api/conversations/${currentConversationId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messages: [...messages, message],
-          }),
+          body: JSON.stringify({ messages: [...messages, message] }),
         })
       }
     },
   })
 
-  // Scroll to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
@@ -54,7 +66,7 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
   useEffect(() => {
     const loadConversations = async () => {
       try {
-        const response = await fetch('/api/conversations')
+        const response = await fetch(`/api/conversations?userId=${userId}`)
         if (response.ok) {
           const data = await response.json()
           setConversations(data.conversations || [])
@@ -63,21 +75,21 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
           }
         }
       } catch (error) {
-        console.error('Failed to load conversations:', error)
+        console.error('[v0] Failed to load conversations:', error)
       }
     }
 
     loadConversations()
-  }, [userId])
+  }, [userId, currentConversationId])
 
   // Create new conversation
   const createNewConversation = async () => {
     try {
-      const response = await fetch('/api/conversations', {
+      const response = await fetch(`/api/conversations?userId=${userId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: `محادثة - ${new Date().toLocaleDateString('ar-EG')}`,
+          title: `محادثة جديدة`,
         }),
       })
 
@@ -89,283 +101,364 @@ export default function ChatInterface({ userId, userName }: { userId: string; us
         setInput('')
       }
     } catch (error) {
-      console.error('Failed to create conversation:', error)
+      console.error('[v0] Failed to create conversation:', error)
     }
   }
 
-  // Handle send message
+  // Delete conversation
+  const deleteConversation = async (id: string) => {
+    try {
+      await fetch(`/api/conversations/${id}`, { method: 'DELETE' })
+      const remaining = conversations.filter((c) => c.id !== id)
+      setConversations(remaining)
+      if (currentConversationId === id) {
+        setCurrentConversationId(remaining[0]?.id || null)
+      }
+    } catch (error) {
+      console.error('[v0] Failed to delete conversation:', error)
+    }
+  }
+
+  // Update conversation title
+  const updateConversationTitle = async (id: string, title: string) => {
+    try {
+      await fetch(`/api/conversations/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title }),
+      })
+      setConversations(
+        conversations.map((c) => (c.id === id ? { ...c, title } : c))
+      )
+      setEditingTitle(null)
+    } catch (error) {
+      console.error('[v0] Failed to update title:', error)
+    }
+  }
+
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim() || isLoading) return
 
-    // Create new conversation if needed
     if (!currentConversationId) {
       createNewConversation().then(() => {
-        // Message will be sent in next render
+        // Message will be sent after conversation is created
       })
       return
     }
 
-    append({
-      role: 'user',
-      content: input,
-    })
-
+    append({ role: 'user', content: input })
     setInput('')
   }
 
-  // Delete conversation
-  const deleteConversation = async (convId: string) => {
-    try {
-      await fetch(`/api/conversations/${convId}`, { method: 'DELETE' })
-      setConversations(conversations.filter((c) => c.id !== convId))
-      if (currentConversationId === convId) {
-        setCurrentConversationId(null)
-      }
-    } catch (error) {
-      console.error('Failed to delete conversation:', error)
-    }
+  // Handle textarea auto-expand
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value)
+    e.target.style.height = 'auto'
+    e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px'
   }
 
-  // Copy message
+  // Copy message to clipboard
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text)
     setCopiedId(id)
     setTimeout(() => setCopiedId(null), 2000)
   }
 
-  // Auto-resize textarea
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.style.height = 'auto'
-      inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 200) + 'px'
-    }
-  }, [input])
+  const currentConversation = conversations.find((c) => c.id === currentConversationId)
 
   return (
-    <div className={`flex h-screen ${isDark ? 'bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
+    <div className="flex h-screen bg-white dark:bg-zinc-950" dir="rtl">
       {/* Sidebar */}
       <div
         className={`${
           showSidebar ? 'w-64' : 'w-0'
-        } ${isDark ? 'bg-gray-900 border-gray-800' : 'bg-gray-50 border-gray-200'} border-r transition-all duration-300 overflow-hidden flex flex-col`}
+        } transition-all duration-200 border-l border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 overflow-hidden flex flex-col`}
       >
         {/* New Chat Button */}
-        <div className="p-3 border-b border-gray-800">
+        <div className="p-4 border-b border-gray-200 dark:border-zinc-800">
           <button
             onClick={createNewConversation}
-            className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-              isDark
-                ? 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-700'
-                : 'bg-white hover:bg-gray-100 text-gray-900 border border-gray-200'
-            }`}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors font-medium text-sm"
           >
             <Plus className="w-4 h-4" />
-            <span>محادثة جديدة</span>
+            دردشة جديدة
           </button>
         </div>
 
         {/* Conversations List */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-2">
-          {conversations.map((conv) => (
+        <div className="flex-1 overflow-y-auto">
+          {conversations.map((conversation) => (
             <div
-              key={conv.id}
-              className={`group p-3 rounded-lg cursor-pointer transition-colors ${
-                currentConversationId === conv.id
-                  ? isDark
-                    ? 'bg-gray-700'
-                    : 'bg-gray-200'
-                  : isDark
-                    ? 'hover:bg-gray-800'
-                    : 'hover:bg-gray-100'
+              key={conversation.id}
+              className={`mx-2 my-1 p-2 rounded-lg cursor-pointer group transition-colors ${
+                currentConversationId === conversation.id
+                  ? 'bg-gray-100 dark:bg-zinc-800'
+                  : 'hover:bg-gray-100 dark:hover:bg-zinc-800/50'
               }`}
+              onClick={() => setCurrentConversationId(conversation.id)}
             >
-              <button
-                onClick={() => setCurrentConversationId(conv.id)}
-                className="w-full text-left truncate text-sm font-medium"
-                title={conv.title}
-              >
-                {conv.title}
-              </button>
-              <button
-                onClick={() => deleteConversation(conv.id)}
-                className={`opacity-0 group-hover:opacity-100 mt-1 text-xs transition-opacity ${
-                  isDark ? 'text-red-400 hover:text-red-300' : 'text-red-500 hover:text-red-600'
-                }`}
-              >
-                <Trash2 className="w-3 h-3" />
-              </button>
+              <div className="flex items-center justify-between gap-2">
+                <div
+                  className="flex-1 min-w-0"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setEditingTitle(conversation.id)
+                    setNewTitle(conversation.title)
+                  }}
+                >
+                  {editingTitle === conversation.id ? (
+                    <input
+                      type="text"
+                      value={newTitle}
+                      onChange={(e) => setNewTitle(e.target.value)}
+                      onBlur={() => {
+                        if (newTitle.trim()) {
+                          updateConversationTitle(conversation.id, newTitle)
+                        } else {
+                          setEditingTitle(null)
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          if (newTitle.trim()) {
+                            updateConversationTitle(conversation.id, newTitle)
+                          }
+                        } else if (e.key === 'Escape') {
+                          setEditingTitle(null)
+                        }
+                      }}
+                      autoFocus
+                      className="w-full px-2 py-1 text-sm rounded border border-blue-500 dark:bg-zinc-700 dark:text-white bg-white"
+                    />
+                  ) : (
+                    <p className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                      {conversation.title}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    deleteConversation(conversation.id)
+                  }}
+                  className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-all"
+                >
+                  <Trash2 className="w-4 h-4 text-red-500" />
+                </button>
+              </div>
             </div>
           ))}
         </div>
 
-        {/* User Info */}
-        <div className={`p-3 border-t ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
-          <div className="text-sm font-medium truncate">{userName}</div>
+        {/* Sidebar Footer */}
+        <div className="p-4 border-t border-gray-200 dark:border-zinc-800">
+          <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
+            Melegy AI Assistant
+          </div>
         </div>
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col bg-white dark:bg-zinc-950">
         {/* Header */}
-        <div
-          className={`flex items-center justify-between px-4 py-3 border-b ${
-            isDark ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-white'
-          }`}
-        >
+        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-zinc-800">
           <button
             onClick={() => setShowSidebar(!showSidebar)}
-            className={`p-2 rounded-lg transition-colors ${
-              isDark ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
-            }`}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
           >
-            <Menu className="w-5 h-5" />
+            <Menu className="w-5 h-5 text-gray-700 dark:text-gray-300" />
           </button>
 
-          <h1 className="text-lg font-semibold">ميليجي - Melegy AI</h1>
+          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+            {currentConversation?.title || 'أبدأ محادثة جديدة'}
+          </h1>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsDark(!isDark)}
-              className={`p-2 rounded-lg transition-colors ${
-                isDark ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
-              }`}
-            >
-              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
-          </div>
+          <div className="w-10" />
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto px-6 py-8 space-y-6">
           {messages.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <h2 className="text-3xl font-bold mb-2">مرحباً بك في ميليجي</h2>
-                <p className={`text-lg ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>
-                  كيف يمكنني مساعدتك اليوم؟
-                </p>
+            <div className="h-full flex flex-col items-center justify-center text-center">
+              <div className="mb-6 w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                <Smile className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                مرحباً بك في Melegy
+              </h2>
+              <p className="text-gray-500 dark:text-gray-400 max-w-md mb-8">
+                أنا مساعدك الذكي. يمكنك أن تسألني عن أي شيء وسأساعدك بأفضل طريقة ممكنة.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
+                {[
+                  'شرح موضوع معقد',
+                  'كتابة كود برمجي',
+                  'تحليل نص',
+                  'توليد أفكار إبداعية',
+                ].map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    onClick={() => {
+                      setInput(suggestion)
+                      inputRef.current?.focus()
+                    }}
+                    className="p-4 rounded-lg border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors text-sm text-gray-700 dark:text-gray-300 text-right"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
               </div>
             </div>
           ) : (
             <>
-              {messages.map((message) => (
-                <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              {messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`flex gap-4 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}
+                >
+                  {/* Avatar */}
                   <div
-                    className={`max-w-2xl px-4 py-3 rounded-lg ${
+                    className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center font-semibold text-sm text-white ${
                       message.role === 'user'
-                        ? isDark
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-blue-500 text-white'
-                        : isDark
-                          ? 'bg-gray-800 text-gray-100'
-                          : 'bg-gray-100 text-gray-900'
+                        ? 'bg-gradient-to-br from-blue-500 to-cyan-500'
+                        : 'bg-gradient-to-br from-green-500 to-emerald-500'
                     }`}
                   >
-                    {message.role === 'assistant' ? (
-                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                    {message.role === 'user' ? 'أنت' : 'M'}
+                  </div>
+
+                  {/* Message Content */}
+                  <div
+                    className={`flex-1 group relative ${
+                      message.role === 'user' ? 'flex flex-row-reverse' : ''
+                    }`}
+                  >
+                    <div
+                      className={`px-4 py-3 rounded-lg max-w-2xl ${
+                        message.role === 'user'
+                          ? 'bg-blue-600 text-white rounded-br-none'
+                          : 'bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white rounded-bl-none'
+                      }`}
+                    >
+                      {message.role === 'assistant' ? (
                         <ReactMarkdown
                           components={{
-                            code: ({ className, children, ...props }: any) => {
+                            code: ({ node, inline, className, children, ...props }) => {
                               const match = /language-(\w+)/.exec(className || '')
-                              const isInline = !className
-                              return !isInline && match ? (
+                              return !inline && match ? (
                                 <SyntaxHighlighter
+                                  {...props}
                                   style={atomDark}
                                   language={match[1]}
                                   PreTag="div"
-                                  {...props}
                                 >
                                   {String(children).replace(/\n$/, '')}
                                 </SyntaxHighlighter>
                               ) : (
-                                <code className={className} {...props}>
+                                <code
+                                  {...props}
+                                  className="bg-zinc-700 px-1.5 py-0.5 rounded text-sm font-mono"
+                                >
                                   {children}
                                 </code>
                               )
                             },
+                            a: ({ children, href }) => (
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 dark:text-blue-400 hover:underline"
+                              >
+                                {children}
+                              </a>
+                            ),
+                            p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                            ul: ({ children }) => (
+                              <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>
+                            ),
+                            ol: ({ children }) => (
+                              <ol className="list-decimal list-inside mb-2 space-y-1">
+                                {children}
+                              </ol>
+                            ),
                           }}
                         >
                           {message.content}
                         </ReactMarkdown>
-                      </div>
-                    ) : (
-                      <p className="whitespace-pre-wrap">{message.content}</p>
-                    )}
-
-                    <div
-                      className={`flex items-center justify-between mt-2 text-xs gap-2 ${
-                        message.role === 'user' ? 'text-blue-100' : isDark ? 'text-gray-500' : 'text-gray-500'
-                      }`}
-                    >
-                      <span>{formatDistanceToNow(new Date(), { locale: ar })}</span>
-                      <button
-                        onClick={() => copyToClipboard(message.content, message.id)}
-                        className="opacity-0 hover:opacity-100 transition-opacity"
-                      >
-                        {copiedId === message.id ? (
-                          <Check className="w-3 h-3" />
-                        ) : (
-                          <Copy className="w-3 h-3" />
-                        )}
-                      </button>
+                      ) : (
+                        message.content
+                      )}
                     </div>
+
+                    {/* Message Actions */}
+                    <button
+                      onClick={() => copyToClipboard(message.content, index.toString())}
+                      className="opacity-0 group-hover:opacity-100 p-2 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded transition-all ml-2"
+                      title="نسخ الرسالة"
+                    >
+                      {copiedId === index.toString() ? (
+                        <Check className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-gray-500" />
+                      )}
+                    </button>
                   </div>
                 </div>
               ))}
 
               {isLoading && (
-                <div className="flex justify-start">
-                  <div className={`px-4 py-3 rounded-lg ${isDark ? 'bg-gray-800' : 'bg-gray-100'}`}>
-                    <div className="flex gap-2">
-                      <div className="w-2 h-2 bg-current rounded-full animate-bounce" />
-                      <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                      <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                    </div>
+                <div className="flex gap-4">
+                  <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center font-semibold text-sm text-white bg-gradient-to-br from-green-500 to-emerald-500">
+                    M
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <Loader className="w-4 h-4 animate-spin" />
+                    جاري الكتابة...
                   </div>
                 </div>
               )}
+
               <div ref={messagesEndRef} />
             </>
           )}
         </div>
 
         {/* Input Area */}
-        <div className={`border-t ${isDark ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-white'} p-4`}>
-          <form onSubmit={handleSendMessage} className="flex gap-3">
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-                  e.preventDefault()
-                  handleSendMessage(e as any)
-                }
-              }}
-              placeholder="اكتب رسالتك هنا..."
-              className={`flex-1 px-4 py-3 rounded-lg border transition-colors resize-none max-h-32 ${
-                isDark
-                  ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500'
-                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-400'
-              } focus:outline-none`}
-              rows={1}
-            />
-            <button
-              type="submit"
-              disabled={isLoading || !input.trim() || !currentConversationId}
-              className={`p-3 rounded-lg transition-colors ${
-                isLoading || !input.trim() || !currentConversationId
-                  ? isDark
-                    ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : isDark
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                    : 'bg-blue-500 hover:bg-blue-600 text-white'
-              }`}
-            >
-              <ArrowUp className="w-5 h-5" />
-            </button>
+        <div className="px-6 py-6 border-t border-gray-200 dark:border-zinc-800">
+          <form onSubmit={handleSendMessage} className="space-y-4">
+            <div className="flex gap-3">
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                    e.preventDefault()
+                    handleSendMessage(e as any)
+                  }
+                }}
+                placeholder="اكتب رسالتك هنا... (Shift+Enter للسطر الجديد)"
+                className="flex-1 px-4 py-3 rounded-xl border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 resize-none max-h-48 placeholder-gray-400"
+                rows={1}
+                style={{ minHeight: '52px' }}
+              />
+              <button
+                type="submit"
+                disabled={isLoading || !input.trim()}
+                className="px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-xl transition-colors flex items-center justify-center"
+              >
+                {isLoading ? (
+                  <Loader className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 text-right">
+              Melegy يستخدم Gemini AI. يرجى مراجعة سياسة الخصوصية قبل المتابعة.
+            </p>
           </form>
         </div>
       </div>
